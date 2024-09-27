@@ -74,6 +74,7 @@ public class Controller {
                 {
                     applyGammaCorrection(gammaSlider.getValue());
                     helpText.setText(String.valueOf(gammaSlider.getValue()));
+                    gammaText.setText(String.valueOf(gammaSlider.getValue()));
                 }
 
             }
