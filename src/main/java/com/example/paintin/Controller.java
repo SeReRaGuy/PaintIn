@@ -5,12 +5,13 @@ import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.image.*;
-import javafx.stage.FileChooser;
 import javafx.scene.paint.Color;
+import javafx.stage.FileChooser;
 
 import java.io.File;
 
 public class Controller {
+    ToggleGroup laplasianToggleGroup = new ToggleGroup();
     @FXML
     private ImageView imageViewIn;
     @FXML
@@ -27,17 +28,21 @@ public class Controller {
     private Button applyEffectButton;
     @FXML
     private Slider imageSlider;
+    @FXML
+    private RadioButton laplasianRadio;
+    @FXML
+    private RadioButton laplasianOrigRadio;
     private Image selectedImage;
     private FileChooser chooser = new FileChooser();
 
 
     @FXML
-    public void initialize()
-    {
+    public void initialize() {
         effectComboBox.getItems().add("Негатив");
         effectComboBox.getItems().add("Гамма-коррекция");
         effectComboBox.getItems().add("Градиент Робертса");
         effectComboBox.getItems().add("Градиент Собела");
+        effectComboBox.getItems().add("Метод Лапласиана");
 
         gammaSlider.setMin(0.0);
         gammaSlider.setMax(25);
@@ -45,32 +50,26 @@ public class Controller {
         imageSlider.setMin(-20);
         imageSlider.setMax(100);
 
+        laplasianRadio.setToggleGroup(laplasianToggleGroup);
+        laplasianOrigRadio.setToggleGroup(laplasianToggleGroup);
 
         effectComboBox.valueProperty().addListener(new ChangeListener<String>() {
             @Override
-            public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue)
-            {
-                if (newValue != null)
-                {
-                    if (newValue.equals("Негатив"))
-                    {
-                        gammaSlider.setVisible(false);
-                        gammaText.setVisible(false);
-                    }
-                    else if (newValue.equals("Гамма-коррекция"))
-                    {
+            public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
+                if (newValue != null) {
+                    gammaSlider.setVisible(false);
+                    gammaText.setVisible(false);
+                    laplasianRadio.setVisible(false);
+                    laplasianOrigRadio.setVisible(false);
+
+                    if (newValue.equals("Гамма-коррекция")) {
                         gammaSlider.setVisible(true);
                         gammaText.setVisible(true);
                     }
-                    else if (newValue.equals("Градиент Робертса"))
-                    {
-                        gammaSlider.setVisible(false);
-                        gammaText.setVisible(false);
-                    }
-                    else if (newValue.equals("Градиент Собела"))
-                    {
-                        gammaSlider.setVisible(false);
-                        gammaText.setVisible(false);
+
+                    if (newValue.equals("Метод Лапласиана")) {
+                        laplasianRadio.setVisible(true);
+                        laplasianOrigRadio.setVisible(true);
                     }
                 }
             }
@@ -80,10 +79,8 @@ public class Controller {
         //Изменение гамма-коррекции происходит и по кнопке, и при изменении ползунка
         gammaSlider.valueProperty().addListener(new ChangeListener<Number>() {
             @Override
-            public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue)
-            {
-                if (selectedImage != null && gammaSlider.isVisible())
-                {
+            public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+                if (selectedImage != null && gammaSlider.isVisible()) {
                     applyGammaCorrection(gammaSlider.getValue());
                     helpText.setText(String.valueOf(gammaSlider.getValue()));
                     gammaText.setText(String.valueOf(gammaSlider.getValue()));
@@ -95,50 +92,44 @@ public class Controller {
         //Изменение смещения изображения при изменении ползунка
         imageSlider.valueProperty().addListener(new ChangeListener<Number>() {
             @Override
-            public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue)
-            {
-                if (selectedImage != null)
-                {
+            public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+                if (selectedImage != null) {
                     moveImage(imageSlider.getValue());
                     helpText.setText(String.valueOf(imageSlider.getValue()));
                 }
             }
         });
     }
+
     @FXML
-    public void onChooseImage()
-    {
+    public void onChooseImage() {
         chooser.setTitle("Выберите изображение");
-        chooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("Image Files", "*.jpg","*.jpeg","*.png"));
+        chooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("Image Files", "*.jpg", "*.jpeg", "*.png"));
         File selectedFile = chooser.showOpenDialog(null);
-        if (selectedFile != null)
-        {
+        if (selectedFile != null) {
             selectedImage = new Image(selectedFile.toURI().toString());
             imageViewIn.setImage(selectedImage);
-            helpText.setText(selectedImage.getHeight() + " / " + selectedImage.getWidth() + " = " + (selectedImage.getHeight()/selectedImage.getWidth()));
+            helpText.setText(selectedImage.getHeight() + " / " + selectedImage.getWidth() + " = " + (selectedImage.getHeight() / selectedImage.getWidth()));
         }
     }
 
     @FXML
-    public void onApplyEffect()
-    {
-        if (selectedImage != null)
-        {
+    public void onApplyEffect() {
+        if (selectedImage != null) {
             String selectedEffect = effectComboBox.getValue();
-            if (selectedEffect != null)
-            {
+            if (selectedEffect != null) {
                 if (selectedEffect.equals("Негатив")) applyNegative();
-                else if (selectedEffect.equals("Гамма-коррекция")) applyGammaCorrection(Double.parseDouble(gammaText.getText()));
+                else if (selectedEffect.equals("Гамма-коррекция"))
+                    applyGammaCorrection(Double.parseDouble(gammaText.getText()));
                 else if (selectedEffect.equals("Градиент Робертса")) applyRobertsOperator();
                 else if (selectedEffect.equals("Градиент Собела")) applySobelOperator();
+                else if (selectedEffect.equals("Метод Лапласиана")) applyLaplacianOperator();
             }
         }
     }
 
-    private void applyNegative()
-    {
-        if (selectedImage != null)
-        {
+    private void applyNegative() {
+        if (selectedImage != null) {
             int width = (int) selectedImage.getWidth();
             int height = (int) selectedImage.getHeight();
 
@@ -146,13 +137,11 @@ public class Controller {
             PixelReader reader = selectedImage.getPixelReader();
             PixelWriter writer = negativeImage.getPixelWriter();
 
-            for (int y = 0; y < height; y++)
-            {
-                for(int x = 0; x < width; x++)
-                {
-                    Color color = reader.getColor(x,y);
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    Color color = reader.getColor(x, y);
                     Color negativeColor = Color.color(1 - color.getRed(), 1 - color.getGreen(), 1 - color.getBlue(), color.getOpacity());
-                    writer.setColor(x,y,negativeColor);
+                    writer.setColor(x, y, negativeColor);
                 }
             }
             imageViewOut.setImage(negativeImage);
@@ -160,8 +149,7 @@ public class Controller {
         }
     }
 
-    private void applyGammaCorrection(double gamma)
-    {
+    private void applyGammaCorrection(double gamma) {
         int width = (int) selectedImage.getWidth();
         int height = (int) selectedImage.getHeight();
 
@@ -169,21 +157,18 @@ public class Controller {
         PixelReader reader = selectedImage.getPixelReader();
         PixelWriter writer = gammaImage.getPixelWriter();
 
-        for (int y = 0; y < height; y++)
-        {
-            for(int x = 0; x < width; x++)
-            {
-                Color color = reader.getColor(x,y);
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                Color color = reader.getColor(x, y);
                 Color gammaColor = Color.color(Math.pow(color.getRed(), gamma), Math.pow(color.getGreen(), gamma), Math.pow(color.getBlue(), gamma), color.getOpacity());
-                writer.setColor(x,y,gammaColor);
+                writer.setColor(x, y, gammaColor);
             }
         }
 
         imageViewOut.setImage(gammaImage);
     }
 
-    private void applyRobertsOperator()
-    {
+    private void applyRobertsOperator() {
         int width = (int) selectedImage.getWidth();
         int height = (int) selectedImage.getHeight();
 
@@ -285,16 +270,93 @@ public class Controller {
         imageViewOut.setImage(sobelImage);
     }
 
+    private void applyLaplacianOperator() {
+        int width = (int) selectedImage.getWidth();
+        int height = (int) selectedImage.getHeight();
+
+        WritableImage laplacianImage = new WritableImage(width, height);
+        PixelReader pixelReader = selectedImage.getPixelReader();
+        PixelWriter pixelWriter = laplacianImage.getPixelWriter();
+
+        // Преобразование изображения в градации серого
+        double[][] grayscaleValues = new double[width][height];
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                Color color = pixelReader.getColor(x, y);
+                double gray = 0.299 * color.getRed() + 0.587 * color.getGreen() + 0.114 * color.getBlue();
+                grayscaleValues[x][y] = gray;
+            }
+        }
+
+        // Лапласиан: фильтр 3x3 для каждого пикселя
+        int[][] laplacianKernel = {
+                {0, 1, 0},
+                {1, -4, 1},
+                {0, 1, 0}
+        };
+
+        for (int y = 1; y < height - 1; y++) {
+            for (int x = 1; x < width - 1; x++) {
+                double laplacianValue = 0;
+
+                // Применение ядра Лапласа
+                for (int ky = -1; ky <= 1; ky++) {
+                    for (int kx = -1; kx <= 1; kx++) {
+                        laplacianValue += grayscaleValues[x + kx][y + ky] * laplacianKernel[ky + 1][kx + 1];
+                    }
+                }
+
+                // Нормализация и ограничение значений для диапазона [0, 1]
+                laplacianValue = Math.min(Math.max(laplacianValue + 0.5, 0), 1);
+
+                // Установка значения пикселя в выводе
+                Color laplacianColor = new Color(laplacianValue, laplacianValue, laplacianValue, 1.0);
+                pixelWriter.setColor(x, y, laplacianColor);
+            }
+        }
+
+        if (laplasianRadio.isSelected()) imageViewOut.setImage(laplacianImage);
+        else if (laplasianOrigRadio.isSelected()) {
+
+            // Создание итогового изображения с оригинальными цветами и контурами
+            WritableImage combinedImage = new WritableImage(width, height);
+            PixelWriter combinedPixelWriter = combinedImage.getPixelWriter();
+
+            // Сложение оригинального изображения с лапласом
+            PixelReader originalPixelReader = selectedImage.getPixelReader();
+            double alpha = 0.5; // Коэффициент для усиления контуров
+
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    Color originalColor = originalPixelReader.getColor(x, y);
+                    Color laplacianColor = pixelReader.getColor(x, y);
+
+                    // Сложение цветовых значений
+                    double combinedRed = Math.min(originalColor.getRed() + alpha * laplacianColor.getRed(), 1.0);
+                    double combinedGreen = Math.min(originalColor.getGreen() + alpha * laplacianColor.getGreen(), 1.0);
+                    double combinedBlue = Math.min(originalColor.getBlue() + alpha * laplacianColor.getBlue(), 1.0);
+
+                    // Установка итогового цвета
+                    combinedPixelWriter.setColor(x, y, new Color(combinedRed, combinedGreen, combinedBlue, 1.0));
+                }
+            }
+
+            // Вывод комбинированного изображения
+            imageViewOut.setImage(combinedImage);
+        }
+    }
+
+
     private int getGrayScale(int argb) {
-        int red = (argb >> 16) & 0xFF; // Побитовые операции, >> для сдвига и получения отдельных частей 4х битного argb, & 0xFF - умножение на маску
+        int red = (argb >> 16) & 0xFF; // Побитовые операции, >> для сдвига и получения отдельных частей 4-х битного argb, & 0xFF - умножение на маску
         int green = (argb >> 8) & 0xFF;
         int blue = argb & 0xFF;
         return (red + green + blue) / 3;
     }
 
-    private void moveImage(double x)
-    {
-        imageViewIn.setX((selectedImage.getHeight()/selectedImage.getWidth())*x);
-        imageViewOut.setX((selectedImage.getHeight()/selectedImage.getWidth())*x);
+    private void moveImage(double x) {
+        imageViewIn.setX((selectedImage.getHeight() / selectedImage.getWidth()) * x);
+        imageViewOut.setX((selectedImage.getHeight() / selectedImage.getWidth()) * x);
     }
 }
