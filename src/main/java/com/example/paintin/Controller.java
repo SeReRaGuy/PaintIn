@@ -14,6 +14,9 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class Controller {
     ToggleGroup laplasianToggleGroup = new ToggleGroup();
@@ -45,6 +48,11 @@ public class Controller {
     private Button histogramButton;
     private Image selectedImage;
     private FileChooser chooser = new FileChooser();
+    private double[][] inhomogeneousAveragingFilter = {
+            {1 / 16.0, 2 / 16.0, 1 / 16.0},
+            {2 / 16.0, 4 / 16.0, 2 / 16.0},
+            {1 / 16.0, 2 / 16.0, 1 / 16.0}
+    };
 
 
     @FXML
@@ -57,6 +65,12 @@ public class Controller {
         effectComboBox.getItems().add("Эквализация гистограммы (ЧБ)");
         effectComboBox.getItems().add("Порог бинаризации");
         effectComboBox.getItems().add("Пороговый фильтр методом Оцу");
+        effectComboBox.getItems().add("Однородный усредняющий фильтр");
+        effectComboBox.getItems().add("Неоднородный усредняющий фильтр");
+        effectComboBox.getItems().add("Медианный фильтр");
+        effectComboBox.getItems().add("Фильтр максимума");
+        effectComboBox.getItems().add("Фильтр минимума");
+        effectComboBox.getItems().add("Фильтр срединной точки");
 
         gammaSlider.setMin(0.0);
         gammaSlider.setMax(25);
@@ -98,7 +112,6 @@ public class Controller {
                 }
             }
         });
-
 
         //Изменение гамма-коррекции происходит и по кнопке, и при изменении ползунка
         gammaSlider.valueProperty().addListener(new ChangeListener<Number>() {
@@ -161,7 +174,14 @@ public class Controller {
                 else if (selectedEffect.equals("Эквализация гистограммы (ЧБ)")) applyEqualizeHistogram();
                 else if (selectedEffect.equals("Порог бинаризации")) applyThresholdFilter(Double.parseDouble(thresholdText.getText()));
                 else if (selectedEffect.equals("Пороговый фильтр методом Оцу")) applyOtsuThresholdFilter();
+                else if (selectedEffect.equals("Однородный усредняющий фильтр")) applyHomogeneousAveragingFilter(5); //Если нужно - организовать выбор размера
+                else if (selectedEffect.equals("Неоднородный усредняющий фильтр")) applyInhomogeneousAveragingFilter(inhomogeneousAveragingFilter); //Если нужно - организовать выбор размера
+                else if (selectedEffect.equals("Медианный фильтр")) applyMedianFilter(3); //Если нужно - организовать выбор размера
+                else if (selectedEffect.equals("Фильтр максимума")) applyMaxFilter(3); //Если нужно - организовать выбор размера
+                else if (selectedEffect.equals("Фильтр минимума")) applyMinFilter(3); //Если нужно - организовать выбор размера
+                else if (selectedEffect.equals("Фильтр срединной точки")) applyMidpointFilter(3); //Если нужно - организовать выбор размера
             }
+
         }
     }
 
@@ -185,7 +205,6 @@ public class Controller {
 
         }
     }
-
     private void applyGammaCorrection(double gamma) {
         int width = (int) selectedImage.getWidth();
         int height = (int) selectedImage.getHeight();
@@ -204,7 +223,6 @@ public class Controller {
 
         imageViewOut.setImage(gammaImage);
     }
-
     private void applyRobertsOperator() {
         int width = (int) selectedImage.getWidth();
         int height = (int) selectedImage.getHeight();
@@ -250,7 +268,6 @@ public class Controller {
 
         imageViewOut.setImage(robertsImage);
     }
-
     private void applySobelOperator() {
         int width = (int) selectedImage.getWidth();
         int height = (int) selectedImage.getHeight();
@@ -306,7 +323,6 @@ public class Controller {
         }
         imageViewOut.setImage(sobelImage);
     }
-
     private void applyLaplacianOperator() {
         int width = (int) selectedImage.getWidth();
         int height = (int) selectedImage.getHeight();
@@ -383,7 +399,6 @@ public class Controller {
             imageViewOut.setImage(combinedImage);
         }
     }
-
     public void applyEqualizeHistogram() {
         int[] histogram = new int[256];
         PixelReader reader = selectedImage.getPixelReader();
@@ -436,9 +451,7 @@ public class Controller {
 
         imageViewOut.setImage(equalizedImage);
     }
-
-    public void applyThresholdFilter(double threshold)
-    {
+    public void applyThresholdFilter(double threshold) {
         int width = (int) selectedImage.getWidth();
         int height = (int) selectedImage.getHeight();
 
@@ -464,10 +477,7 @@ public class Controller {
 
         imageViewOut.setImage(thresholdImage);
     }
-
-
-    public void applyOtsuThresholdFilter()
-    {
+    public void applyOtsuThresholdFilter() {
 
         int width = (int) selectedImage.getWidth();
         int height = (int) selectedImage.getHeight();
@@ -532,6 +542,282 @@ public class Controller {
         }
         imageViewOut.setImage(OtsuThresholdImage);
     }
+    private void applyHomogeneousAveragingFilter(int filterSize) {
+
+        int width = (int) selectedImage.getWidth();
+        int height = (int) selectedImage.getHeight();
+
+        WritableImage homogeneousAveragingImage = new WritableImage(width, height);
+        PixelReader pixelReader = selectedImage.getPixelReader();
+        PixelWriter pixelWriter = homogeneousAveragingImage.getPixelWriter();
+
+        int radius = filterSize / 2;
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int redSum = 0;
+                int greenSum = 0;
+                int blueSum = 0;
+                int count = 0;
+
+                // Проходим по окну фильтра
+                for (int dy = -radius; dy <= radius; dy++) {
+                    for (int dx = -radius; dx <= radius; dx++) {
+                        int nx = x + dx;
+                        int ny = y + dy;
+
+                        // Проверка на выход за пределы изображения
+                        if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                            Color color = pixelReader.getColor(nx, ny);
+                            redSum += color.getRed() * 255;
+                            greenSum += color.getGreen() * 255;
+                            blueSum += color.getBlue() * 255;
+                            count++;
+                        }
+                    }
+                }
+
+                // Усредняем сумму и записываем цвет в результирующее изображение
+                int avgRed = redSum / count;
+                int avgGreen = greenSum / count;
+                int avgBlue = blueSum / count;
+
+                Color avgColor = Color.rgb(avgRed, avgGreen, avgBlue);
+                pixelWriter.setColor(x, y, avgColor);
+            }
+        }
+        imageViewOut.setImage(homogeneousAveragingImage);
+    }
+    private void applyInhomogeneousAveragingFilter(double[][] kernel) {
+
+        int width = (int) selectedImage.getWidth();
+        int height = (int) selectedImage.getHeight();
+
+        WritableImage inhomogeneousAveragingImage = new WritableImage(width, height);
+        PixelReader pixelReader = selectedImage.getPixelReader();
+        PixelWriter pixelWriter = inhomogeneousAveragingImage.getPixelWriter();
+
+        int filterSize = kernel.length;
+        int radius = filterSize / 2;
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                double redSum = 0;
+                double greenSum = 0;
+                double blueSum = 0;
+                double weightSum = 0;
+
+                // Применение ядра фильтра
+                for (int dy = -radius; dy <= radius; dy++) {
+                    for (int dx = -radius; dx <= radius; dx++) {
+                        int nx = x + dx;
+                        int ny = y + dy;
+
+                        // Проверка на выход за пределы изображения
+                        if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                            Color color = pixelReader.getColor(nx, ny);
+                            double weight = kernel[dy + radius][dx + radius];
+
+                            redSum += color.getRed() * weight;
+                            greenSum += color.getGreen() * weight;
+                            blueSum += color.getBlue() * weight;
+                            weightSum += weight;
+                        }
+                    }
+                }
+
+                // Нормализация и установка нового цвета
+                int avgRed = (int) Math.min(255, (redSum / weightSum) * 255);
+                int avgGreen = (int) Math.min(255, (greenSum / weightSum) * 255);
+                int avgBlue = (int) Math.min(255, (blueSum / weightSum) * 255);
+
+                Color avgColor = Color.rgb(avgRed, avgGreen, avgBlue);
+                pixelWriter.setColor(x, y, avgColor);
+            }
+        }
+        imageViewOut.setImage(inhomogeneousAveragingImage);
+    }
+    private void applyMedianFilter(int filterSize) {
+
+        int width = (int) selectedImage.getWidth();
+        int height = (int) selectedImage.getHeight();
+
+        WritableImage medianFilterImage = new WritableImage(width, height);
+        PixelReader pixelReader = selectedImage.getPixelReader();
+        PixelWriter pixelWriter = medianFilterImage.getPixelWriter();
+
+        int radius = filterSize / 2;
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                // Списки для хранения значений цветов в окне фильтра
+                List<Integer> redValues = new ArrayList<>();
+                List<Integer> greenValues = new ArrayList<>();
+                List<Integer> blueValues = new ArrayList<>();
+
+                // Сбор значений из окна фильтра
+                for (int dy = -radius; dy <= radius; dy++) {
+                    for (int dx = -radius; dx <= radius; dx++) {
+                        int nx = x + dx;
+                        int ny = y + dy;
+
+                        // Проверка на выход за границы изображения
+                        if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                            Color color = pixelReader.getColor(nx, ny);
+                            redValues.add((int) (color.getRed() * 255));
+                            greenValues.add((int) (color.getGreen() * 255));
+                            blueValues.add((int) (color.getBlue() * 255));
+                        }
+                    }
+                }
+
+                // Поиск медианы для каждого канала
+                int medianRed = getMedian(redValues);
+                int medianGreen = getMedian(greenValues);
+                int medianBlue = getMedian(blueValues);
+
+                // Установка медианного цвета в результирующее изображение
+                Color medianColor = Color.rgb(medianRed, medianGreen, medianBlue);
+                pixelWriter.setColor(x, y, medianColor);
+            }
+        }
+        imageViewOut.setImage(medianFilterImage);
+    }
+    private void applyMaxFilter(int filterSize) {
+
+        int width = (int) selectedImage.getWidth();
+        int height = (int) selectedImage.getHeight();
+
+        WritableImage maxFilterImage = new WritableImage(width, height);
+        PixelReader pixelReader = selectedImage.getPixelReader();
+        PixelWriter pixelWriter = maxFilterImage.getPixelWriter();
+
+        int radius = filterSize / 2;
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int maxRed = 0;
+                int maxGreen = 0;
+                int maxBlue = 0;
+
+                // Проходим по окну фильтра вокруг текущего пикселя
+                for (int dy = -radius; dy <= radius; dy++) {
+                    for (int dx = -radius; dx <= radius; dx++) {
+                        int nx = x + dx;
+                        int ny = y + dy;
+
+                        // Проверка на выход за границы изображения
+                        if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                            Color color = pixelReader.getColor(nx, ny);
+                            maxRed = Math.max(maxRed, (int) (color.getRed() * 255));
+                            maxGreen = Math.max(maxGreen, (int) (color.getGreen() * 255));
+                            maxBlue = Math.max(maxBlue, (int) (color.getBlue() * 255));
+                        }
+                    }
+                }
+
+                // Установка максимального цвета в результирующее изображение
+                Color maxColor = Color.rgb(maxRed, maxGreen, maxBlue);
+                pixelWriter.setColor(x, y, maxColor);
+            }
+        }
+        imageViewOut.setImage(maxFilterImage);
+    }
+    private void applyMinFilter(int filterSize) {
+
+        int width = (int) selectedImage.getWidth();
+        int height = (int) selectedImage.getHeight();
+
+        WritableImage minFilterImage = new WritableImage(width, height);
+        PixelReader pixelReader = selectedImage.getPixelReader();
+        PixelWriter pixelWriter = minFilterImage.getPixelWriter();
+        int radius = filterSize / 2;
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int minRed = 255;
+                int minGreen = 255;
+                int minBlue = 255;
+
+                // Проход по окну фильтра вокруг текущего пикселя
+                for (int dy = -radius; dy <= radius; dy++) {
+                    for (int dx = -radius; dx <= radius; dx++) {
+                        int nx = x + dx;
+                        int ny = y + dy;
+
+                        // Проверка на выход за границы изображения
+                        if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                            Color color = pixelReader.getColor(nx, ny);
+                            minRed = Math.min(minRed, (int) (color.getRed() * 255));
+                            minGreen = Math.min(minGreen, (int) (color.getGreen() * 255));
+                            minBlue = Math.min(minBlue, (int) (color.getBlue() * 255));
+                        }
+                    }
+                }
+
+                // Установка минимального цвета в результирующее изображение
+                Color minColor = Color.rgb(minRed, minGreen, minBlue);
+                pixelWriter.setColor(x, y, minColor);
+            }
+        }
+        imageViewOut.setImage(minFilterImage);
+    }
+    private void applyMidpointFilter(int filterSize) {
+
+        int width = (int) selectedImage.getWidth();
+        int height = (int) selectedImage.getHeight();
+
+        WritableImage midpointFilterImage = new WritableImage(width, height);
+        PixelReader pixelReader = selectedImage.getPixelReader();
+        PixelWriter pixelWriter = midpointFilterImage.getPixelWriter();
+        int radius = filterSize / 2;
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int minRed = 255, minGreen = 255, minBlue = 255;
+                int maxRed = 0, maxGreen = 0, maxBlue = 0;
+
+                // Проход по окну фильтра вокруг текущего пикселя
+                for (int dy = -radius; dy <= radius; dy++) {
+                    for (int dx = -radius; dx <= radius; dx++) {
+                        int nx = x + dx;
+                        int ny = y + dy;
+
+                        // Проверка на выход за границы изображения
+                        if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                            Color color = pixelReader.getColor(nx, ny);
+
+                            // Обновление минимальных значений
+                            minRed = Math.min(minRed, (int) (color.getRed() * 255));
+                            minGreen = Math.min(minGreen, (int) (color.getGreen() * 255));
+                            minBlue = Math.min(minBlue, (int) (color.getBlue() * 255));
+
+                            // Обновление максимальных значений
+                            maxRed = Math.max(maxRed, (int) (color.getRed() * 255));
+                            maxGreen = Math.max(maxGreen, (int) (color.getGreen() * 255));
+                            maxBlue = Math.max(maxBlue, (int) (color.getBlue() * 255));
+                        }
+                    }
+                }
+
+                // Вычисление срединного значения
+                int midRed = (minRed + maxRed) / 2;
+                int midGreen = (minGreen + maxGreen) / 2;
+                int midBlue = (minBlue + maxBlue) / 2;
+
+                // Установка цвета срединной точки в результирующее изображение
+                Color midColor = Color.rgb(midRed, midGreen, midBlue);
+                pixelWriter.setColor(x, y, midColor);
+            }
+        }
+        imageViewOut.setImage(midpointFilterImage);
+    }
+
+
+
+
+
+
 
     private int getGrayScale(int argb) {
         int red = (argb >> 16) & 0xFF; // Побитовые операции, >> для сдвига и получения отдельных частей 4-х битного argb, & 0xFF - умножение на маску
@@ -539,7 +825,6 @@ public class Controller {
         int blue = argb & 0xFF;
         return (red + green + blue) / 3;
     }
-
     @FXML
     public void onShowHistogram() {
         if (selectedImage != null) {
@@ -557,5 +842,14 @@ public class Controller {
     private void moveImage(double x) {
         imageViewIn.setX((selectedImage.getHeight() / selectedImage.getWidth()) * x);
         imageViewOut.setX((selectedImage.getHeight() / selectedImage.getWidth()) * x);
+    }
+    private int getMedian(List<Integer> values) {
+        Collections.sort(values);
+        int middle = values.size() / 2;
+        if (values.size() % 2 == 0) {
+            return (values.get(middle - 1) + values.get(middle)) / 2;
+        } else {
+            return values.get(middle);
+        }
     }
 }
