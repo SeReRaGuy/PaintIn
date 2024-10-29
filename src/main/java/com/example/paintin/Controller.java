@@ -3,10 +3,15 @@ package com.example.paintin;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXML;
+import javafx.scene.Scene;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
 import javafx.scene.image.*;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 
 import java.io.File;
 
@@ -32,6 +37,8 @@ public class Controller {
     private RadioButton laplasianRadio;
     @FXML
     private RadioButton laplasianOrigRadio;
+    @FXML
+    private Button histogramButton;
     private Image selectedImage;
     private FileChooser chooser = new FileChooser();
 
@@ -43,6 +50,7 @@ public class Controller {
         effectComboBox.getItems().add("Градиент Робертса");
         effectComboBox.getItems().add("Градиент Собела");
         effectComboBox.getItems().add("Метод Лапласиана");
+        effectComboBox.getItems().add("Эквализация гистограммы (ЧБ)");
 
         gammaSlider.setMin(0.0);
         gammaSlider.setMax(25);
@@ -124,6 +132,7 @@ public class Controller {
                 else if (selectedEffect.equals("Градиент Робертса")) applyRobertsOperator();
                 else if (selectedEffect.equals("Градиент Собела")) applySobelOperator();
                 else if (selectedEffect.equals("Метод Лапласиана")) applyLaplacianOperator();
+                else if (selectedEffect.equals("Эквализация гистограммы (ЧБ)")) applyEqualizeHistogram();
             }
         }
     }
@@ -347,6 +356,59 @@ public class Controller {
         }
     }
 
+    public void applyEqualizeHistogram() {
+        int[] histogram = new int[256];
+        PixelReader reader = selectedImage.getPixelReader();
+        int width = (int) selectedImage.getWidth();
+        int height = (int) selectedImage.getHeight();
+
+        // Шаг 1: Подсчет гистограммы яркости
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                Color color = reader.getColor(x, y);
+                int brightness = (int) (0.299 * color.getRed() * 255 +
+                        0.587 * color.getGreen() * 255 +
+                        0.114 * color.getBlue() * 255);
+                histogram[brightness]++;
+            }
+        }
+
+        // Шаг 2: Вычисление кумулятивного распределения
+        int[] cumulativeDistribution = new int[256];
+        cumulativeDistribution[0] = histogram[0];
+        for (int i = 1; i < 256; i++) {
+            cumulativeDistribution[i] = cumulativeDistribution[i - 1] + histogram[i];
+        }
+
+        // Нормализация кумулятивного распределения для использования в преобразовании
+        int totalPixels = width * height;
+        int[] lut = new int[256];
+        for (int i = 0; i < 256; i++) {
+            lut[i] = (int) ((cumulativeDistribution[i] - cumulativeDistribution[0]) * 255.0 / (totalPixels - cumulativeDistribution[0]));
+            lut[i] = Math.max(0, Math.min(255, lut[i])); // Ограничиваем значения от 0 до 255
+        }
+
+        // Шаг 3: Создание нового изображения с эквализированной гистограммой
+        WritableImage equalizedImage = new WritableImage(width, height);
+        PixelWriter writer = equalizedImage.getPixelWriter();
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                Color color = reader.getColor(x, y);
+                int brightness = (int) (0.299 * color.getRed() * 255 +
+                        0.587 * color.getGreen() * 255 +
+                        0.114 * color.getBlue() * 255);
+                int newBrightness = lut[brightness];
+
+                // Создаем новый цвет с эквализированной яркостью, сохраняя исходный оттенок
+                Color newColor = Color.grayRgb(newBrightness);
+                writer.setColor(x, y, newColor);
+            }
+        }
+
+        imageViewOut.setImage(equalizedImage);
+    }
+
 
     private int getGrayScale(int argb) {
         int red = (argb >> 16) & 0xFF; // Побитовые операции, >> для сдвига и получения отдельных частей 4-х битного argb, & 0xFF - умножение на маску
@@ -355,6 +417,20 @@ public class Controller {
         return (red + green + blue) / 3;
     }
 
+    @FXML
+    public void onShowHistogram() {
+        if (selectedImage != null) {
+            HistogramViewer histogramViewer = new HistogramViewer(selectedImage);
+            histogramViewer.showHistogram(); //showEqualizedImage showHistogram
+        } else {
+            // Добавьте уведомление для пользователя, если изображение не выбрано
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("Предупреждение");
+            alert.setHeaderText("Изображение не выбрано");
+            alert.setContentText("Пожалуйста, выберите изображение перед открытием гистограммы.");
+            alert.showAndWait();
+        }
+    }
     private void moveImage(double x) {
         imageViewIn.setX((selectedImage.getHeight() / selectedImage.getWidth()) * x);
         imageViewOut.setX((selectedImage.getHeight() / selectedImage.getWidth()) * x);
