@@ -30,6 +30,10 @@ public class Controller {
     @FXML
     private TextField gammaText;
     @FXML
+    private TextField thresholdText;
+    @FXML
+    private Slider thresholdSlider;
+    @FXML
     private Button applyEffectButton;
     @FXML
     private Slider imageSlider;
@@ -51,9 +55,14 @@ public class Controller {
         effectComboBox.getItems().add("Градиент Собела");
         effectComboBox.getItems().add("Метод Лапласиана");
         effectComboBox.getItems().add("Эквализация гистограммы (ЧБ)");
+        effectComboBox.getItems().add("Порог бинаризации");
+        effectComboBox.getItems().add("Пороговый фильтр методом Оцу");
 
         gammaSlider.setMin(0.0);
         gammaSlider.setMax(25);
+
+        thresholdSlider.setMin(0.0);
+        thresholdSlider.setMax(1.0);
 
         imageSlider.setMin(-20);
         imageSlider.setMax(100);
@@ -69,6 +78,8 @@ public class Controller {
                     gammaText.setVisible(false);
                     laplasianRadio.setVisible(false);
                     laplasianOrigRadio.setVisible(false);
+                    thresholdSlider.setVisible(false);
+                    thresholdText.setVisible(false);
 
                     if (newValue.equals("Гамма-коррекция")) {
                         gammaSlider.setVisible(true);
@@ -78,6 +89,11 @@ public class Controller {
                     if (newValue.equals("Метод Лапласиана")) {
                         laplasianRadio.setVisible(true);
                         laplasianOrigRadio.setVisible(true);
+                    }
+
+                    if (newValue.equals("Порог бинаризации")) {
+                        thresholdSlider.setVisible(true);
+                        thresholdText.setVisible(true);
                     }
                 }
             }
@@ -107,6 +123,16 @@ public class Controller {
                 }
             }
         });
+
+        thresholdSlider.valueProperty().addListener(new ChangeListener<Number>() {
+            @Override
+            public void changed(ObservableValue<? extends Number> observableValue, Number oldValue, Number newValue) {
+                if (selectedImage != null) {
+                    applyThresholdFilter(thresholdSlider.getValue());
+                    helpText.setText(String.valueOf(thresholdSlider.getValue()));
+                }
+            }
+        });
     }
 
     @FXML
@@ -133,6 +159,8 @@ public class Controller {
                 else if (selectedEffect.equals("Градиент Собела")) applySobelOperator();
                 else if (selectedEffect.equals("Метод Лапласиана")) applyLaplacianOperator();
                 else if (selectedEffect.equals("Эквализация гистограммы (ЧБ)")) applyEqualizeHistogram();
+                else if (selectedEffect.equals("Порог бинаризации")) applyThresholdFilter(Double.parseDouble(thresholdText.getText()));
+                else if (selectedEffect.equals("Пороговый фильтр методом Оцу")) applyOtsuThresholdFilter();
             }
         }
     }
@@ -409,6 +437,101 @@ public class Controller {
         imageViewOut.setImage(equalizedImage);
     }
 
+    public void applyThresholdFilter(double threshold)
+    {
+        int width = (int) selectedImage.getWidth();
+        int height = (int) selectedImage.getHeight();
+
+        WritableImage thresholdImage = new WritableImage(width, height);
+        PixelReader pixelReader = selectedImage.getPixelReader();
+        PixelWriter pixelWriter = thresholdImage.getPixelWriter();
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                // Читаем цвет текущего пикселя
+                Color color = pixelReader.getColor(x, y);
+
+                // Преобразуем цвет в оттенок серого для расчета яркости
+                double brightness = color.getBrightness();
+
+                // Сравниваем яркость с порогом и устанавливаем белый или черный цвет
+                Color binaryColor = brightness >= threshold ? Color.WHITE : Color.BLACK;
+
+                // Записываем бинаризованный цвет в выходное изображение
+                pixelWriter.setColor(x, y, binaryColor);
+            }
+        }
+
+        imageViewOut.setImage(thresholdImage);
+    }
+
+
+    public void applyOtsuThresholdFilter()
+    {
+
+        int width = (int) selectedImage.getWidth();
+        int height = (int) selectedImage.getHeight();
+
+        WritableImage OtsuThresholdImage = new WritableImage(width, height);
+        PixelReader pixelReader = selectedImage.getPixelReader();
+        PixelWriter pixelWriter = OtsuThresholdImage.getPixelWriter();
+
+        int[] histogram = new int[256];
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                double brightness = pixelReader.getColor(x, y).getBrightness();
+                int grayLevel = (int) (brightness * 255);
+                histogram[grayLevel]++;
+            }
+        }
+
+        int totalPixels = width * height;
+        double sumAll = 0;
+        for (int i = 0; i < 256; i++) {
+            sumAll += i * histogram[i];
+        }
+
+        int bestThreshold = 0;
+        double maxBetweenClassVariance = 0;
+        double sumBackground = 0;
+        int weightBackground = 0;
+
+        for (int t = 0; t < 256; t++) {
+            // Обновляем вес и сумму яркости фона
+            weightBackground += histogram[t];
+            if (weightBackground == 0) continue;
+
+            int weightForeground = totalPixels - weightBackground;
+            if (weightForeground == 0) break;
+
+            sumBackground += t * histogram[t];
+
+            double meanBackground = sumBackground / weightBackground;
+            double meanForeground = (sumAll - sumBackground) / weightForeground;
+
+            // Межклассовая дисперсия
+            double betweenClassVariance = weightBackground * weightForeground * Math.pow(meanBackground - meanForeground, 2);
+
+            // Проверяем, является ли текущее значение максимальным
+            if (betweenClassVariance > maxBetweenClassVariance) {
+                maxBetweenClassVariance = betweenClassVariance;
+                bestThreshold = t;
+            }
+        }
+
+        double threshold = bestThreshold / 255.0;  // переводим порог в диапазон 0-1 для удобства
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                Color color = pixelReader.getColor(x, y);
+                double brightness = color.getBrightness();
+                Color binaryColor = brightness >= threshold ? Color.WHITE : Color.BLACK;
+                pixelWriter.setColor(x, y, binaryColor);
+            }
+        }
+        imageViewOut.setImage(OtsuThresholdImage);
+    }
 
     private int getGrayScale(int argb) {
         int red = (argb >> 16) & 0xFF; // Побитовые операции, >> для сдвига и получения отдельных частей 4-х битного argb, & 0xFF - умножение на маску

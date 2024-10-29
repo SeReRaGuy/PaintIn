@@ -43,5 +43,7 @@
       <RadioButton fx:id="laplasianRadio" layoutX="360.0" layoutY="541.0" mnemonicParsing="false" text="Лапласиан" visible="false" />
       <RadioButton fx:id="laplasianOrigRadio" layoutX="360.0" layoutY="562.0" mnemonicParsing="false" text="Лапласиан + изображение" visible="false" />
       <Button fx:id="histogramButton" layoutX="14.0" layoutY="608.0" mnemonicParsing="false" onMouseClicked="#onShowHistogram" prefHeight="25.0" prefWidth="335.0" text="Гистограмма изображения" />
+      <Slider fx:id="thresholdSlider" layoutX="370.0" layoutY="553.0" prefHeight="14.0" prefWidth="200.0" visible="false" />
+      <TextField fx:id="thresholdText" layoutX="370.0" layoutY="572.0" prefHeight="25.0" prefWidth="200.0" promptText="Изменить y - гамма" visible="false" />
    </children>
 </AnchorPane>
