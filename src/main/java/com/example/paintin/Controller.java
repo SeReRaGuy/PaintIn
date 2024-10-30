@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+
 public class Controller {
     ToggleGroup laplasianToggleGroup = new ToggleGroup();
     @FXML
@@ -37,7 +38,9 @@ public class Controller {
     @FXML
     private Slider thresholdSlider;
     @FXML
-    private Button applyEffectButton;
+    private CheckBox onOriginalCheck;
+    @FXML
+    private Button saveButton;
     @FXML
     private Slider imageSlider;
     @FXML
@@ -213,7 +216,12 @@ public class Controller {
                     writer.setColor(x, y, negativeColor);
                 }
             }
-            imageViewOut.setImage(negativeImage);
+            if (onOriginalCheck.isSelected())
+            {
+                imageViewIn.setImage(negativeImage);
+                selectedImage = negativeImage;
+            }
+            else imageViewOut.setImage(negativeImage);
 
         }
     }
@@ -233,7 +241,12 @@ public class Controller {
             }
         }
 
-        imageViewOut.setImage(gammaImage);
+        if (onOriginalCheck.isSelected())
+        {
+            imageViewIn.setImage(gammaImage);
+            selectedImage = gammaImage;
+        }
+        else imageViewOut.setImage(gammaImage);
     }
     private void applyRobertsOperator() {
         int width = (int) selectedImage.getWidth();
@@ -278,7 +291,12 @@ public class Controller {
             }
         }
 
-        imageViewOut.setImage(robertsImage);
+        if (onOriginalCheck.isSelected())
+        {
+            imageViewIn.setImage(robertsImage);
+            selectedImage = robertsImage;
+        }
+        else imageViewOut.setImage(robertsImage);
     }
     private void applySobelOperator() {
         int width = (int) selectedImage.getWidth();
@@ -333,7 +351,12 @@ public class Controller {
                 writer.setArgb(x, y, newPixelValue);
             }
         }
-        imageViewOut.setImage(sobelImage);
+        if (onOriginalCheck.isSelected())
+        {
+            imageViewIn.setImage(sobelImage);
+            selectedImage = sobelImage;
+        }
+        else imageViewOut.setImage(sobelImage);
     }
     private void applyLaplacianOperator() {
         int width = (int) selectedImage.getWidth();
@@ -408,7 +431,12 @@ public class Controller {
             }
 
             // Вывод комбинированного изображения
-            imageViewOut.setImage(combinedImage);
+            if (onOriginalCheck.isSelected())
+            {
+                imageViewIn.setImage(combinedImage);
+                selectedImage = combinedImage;
+            }
+            else imageViewOut.setImage(combinedImage);
         }
     }
     public void applyEqualizeHistogram() {
@@ -461,7 +489,12 @@ public class Controller {
             }
         }
 
-        imageViewOut.setImage(equalizedImage);
+        if (onOriginalCheck.isSelected())
+        {
+            imageViewIn.setImage(equalizedImage);
+            selectedImage = equalizedImage;
+        }
+        else imageViewOut.setImage(equalizedImage);
     }
     public void applyThresholdFilter(double threshold) {
         int width = (int) selectedImage.getWidth();
@@ -487,7 +520,12 @@ public class Controller {
             }
         }
 
-        imageViewOut.setImage(thresholdImage);
+        if (onOriginalCheck.isSelected())
+        {
+            imageViewIn.setImage(thresholdImage);
+            selectedImage = thresholdImage;
+        }
+        else imageViewOut.setImage(thresholdImage);
     }
     public void applyOtsuThresholdFilter() {
 
@@ -552,7 +590,12 @@ public class Controller {
                 pixelWriter.setColor(x, y, binaryColor);
             }
         }
-        imageViewOut.setImage(OtsuThresholdImage);
+        if (onOriginalCheck.isSelected())
+        {
+            imageViewIn.setImage(OtsuThresholdImage);
+            selectedImage = OtsuThresholdImage;
+        }
+        else imageViewOut.setImage(OtsuThresholdImage);
     }
     private void applyHomogeneousAveragingFilter(int filterSize) {
 
@@ -598,7 +641,12 @@ public class Controller {
                 pixelWriter.setColor(x, y, avgColor);
             }
         }
-        imageViewOut.setImage(homogeneousAveragingImage);
+        if (onOriginalCheck.isSelected())
+        {
+            imageViewIn.setImage(homogeneousAveragingImage);
+            selectedImage = homogeneousAveragingImage;
+        }
+        else imageViewOut.setImage(homogeneousAveragingImage);
     }
     private void applyInhomogeneousAveragingFilter(double[][] kernel) {
 
@@ -647,7 +695,12 @@ public class Controller {
                 pixelWriter.setColor(x, y, avgColor);
             }
         }
-        imageViewOut.setImage(inhomogeneousAveragingImage);
+        if (onOriginalCheck.isSelected())
+        {
+            imageViewIn.setImage(inhomogeneousAveragingImage);
+            selectedImage = inhomogeneousAveragingImage;
+        }
+        else imageViewOut.setImage(inhomogeneousAveragingImage);
     }
     private void applyMedianFilter(int filterSize) {
 
@@ -693,7 +746,12 @@ public class Controller {
                 pixelWriter.setColor(x, y, medianColor);
             }
         }
-        imageViewOut.setImage(medianFilterImage);
+        if (onOriginalCheck.isSelected())
+        {
+            imageViewIn.setImage(medianFilterImage);
+            selectedImage = medianFilterImage;
+        }
+        else imageViewOut.setImage(medianFilterImage);
     }
     private void applyMaxFilter(int filterSize) {
 
@@ -733,7 +791,12 @@ public class Controller {
                 pixelWriter.setColor(x, y, maxColor);
             }
         }
-        imageViewOut.setImage(maxFilterImage);
+        if (onOriginalCheck.isSelected())
+        {
+            imageViewIn.setImage(maxFilterImage);
+            selectedImage = maxFilterImage;
+        }
+        else imageViewOut.setImage(maxFilterImage);
     }
     private void applyMinFilter(int filterSize) {
 
@@ -772,7 +835,12 @@ public class Controller {
                 pixelWriter.setColor(x, y, minColor);
             }
         }
-        imageViewOut.setImage(minFilterImage);
+        if (onOriginalCheck.isSelected())
+        {
+            imageViewIn.setImage(minFilterImage);
+            selectedImage = minFilterImage;
+        }
+        else imageViewOut.setImage(minFilterImage);
     }
     private void applyMidpointFilter(int filterSize) {
 
@@ -822,7 +890,12 @@ public class Controller {
                 pixelWriter.setColor(x, y, midColor);
             }
         }
-        imageViewOut.setImage(midpointFilterImage);
+        if (onOriginalCheck.isSelected())
+        {
+            imageViewIn.setImage(midpointFilterImage);
+            selectedImage = midpointFilterImage;
+        }
+        else imageViewOut.setImage(midpointFilterImage);
     }
     private void applyDilation(int filterSize) {
 
@@ -835,7 +908,12 @@ public class Controller {
 
         performDilation(filterSize, pixelReader, pixelWriter);
 
-        imageViewOut.setImage(dilatationFilterImage);
+        if (onOriginalCheck.isSelected())
+        {
+            imageViewIn.setImage(dilatationFilterImage);
+            selectedImage = dilatationFilterImage;
+        }
+        else imageViewOut.setImage(dilatationFilterImage);
     }
     private void applyErosion(int filterSize) {
 
@@ -848,7 +926,12 @@ public class Controller {
 
         performErosion(filterSize, pixelReader, pixelWriter);
 
-        imageViewOut.setImage(erosionFilterImage);
+        if (onOriginalCheck.isSelected())
+        {
+            imageViewIn.setImage(erosionFilterImage);
+            selectedImage = erosionFilterImage;
+        }
+        else imageViewOut.setImage(erosionFilterImage);
     }
     private void applyClosing(int filterSize) {
         int width = (int) selectedImage.getWidth();
@@ -866,7 +949,12 @@ public class Controller {
         PixelWriter closingWriter = closingImage.getPixelWriter();
         performErosion(filterSize, dilatedReader, closingWriter);
 
-        imageViewOut.setImage(closingImage);
+        if (onOriginalCheck.isSelected())
+        {
+            imageViewIn.setImage(closingImage);
+            selectedImage = closingImage;
+        }
+        else imageViewOut.setImage(closingImage);
     }
     private void applyOpening(int filterSize) {
         int width = (int) selectedImage.getWidth();
@@ -886,7 +974,12 @@ public class Controller {
         PixelWriter openingWriter = openedImage.getPixelWriter();
         performDilation(filterSize, erodedReader, openingWriter);
 
-        imageViewOut.setImage(openedImage);
+        if (onOriginalCheck.isSelected())
+        {
+            imageViewIn.setImage(openedImage);
+            selectedImage = openedImage;
+        }
+        else imageViewOut.setImage(openedImage);
     }
     private void applyEdgeDetection(int filterSize) {
         int width = (int) selectedImage.getWidth();
@@ -920,7 +1013,12 @@ public class Controller {
                 edgeWriter.setColor(x, y, edgeColor);
             }
         }
-        imageViewOut.setImage(edgeImage);
+        if (onOriginalCheck.isSelected())
+        {
+            imageViewIn.setImage(edgeImage);
+            selectedImage = edgeImage;
+        }
+        else imageViewOut.setImage(edgeImage);
     }
     public void applySkeletonization() {
         int width = (int) selectedImage.getWidth();
@@ -993,7 +1091,12 @@ public class Controller {
                 }
             }
         }
-        imageViewOut.setImage(skeletonImage);
+        if (onOriginalCheck.isSelected())
+        {
+            imageViewIn.setImage(skeletonImage);
+            selectedImage = skeletonImage;
+        }
+        else imageViewOut.setImage(skeletonImage);
     }
 
 

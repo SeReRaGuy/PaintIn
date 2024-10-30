@@ -1,3 +1,7 @@
 .radio-button {
-    -fx-text-fill: white; /* Устанавливаем белый цвет текста */
+    -fx-text-fill: white;
+}
+
+.check-box{
+    -fx-text-fill: white;
 }
