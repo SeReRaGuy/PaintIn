@@ -191,7 +191,7 @@ public class Controller {
                 else if (selectedEffect.equals("Замыкание")) applyClosing(3); //Если нужно - организовать выбор размера
                 else if (selectedEffect.equals("Размыкание")) applyOpening(3); //Если нужно - организовать выбор размера
                 else if (selectedEffect.equals("Выделение границ")) applyEdgeDetection(3); //Если нужно - организовать выбор размера
-                else if (selectedEffect.equals("Остов")) applySkeletonization(3); //Если нужно - организовать выбор размера
+                else if (selectedEffect.equals("Остов")) applySkeletonization(); //Если нужно - организовать выбор размера
             }
 
         }
@@ -922,57 +922,76 @@ public class Controller {
         }
         imageViewOut.setImage(edgeImage);
     }
-    private void applySkeletonization(int filterSize) {
-
+    public void applySkeletonization() {
         int width = (int) selectedImage.getWidth();
         int height = (int) selectedImage.getHeight();
 
-        WritableImage currentImage = new WritableImage(width, height);
-        PixelWriter currentWriter = currentImage.getPixelWriter();
         PixelReader pixelReader = selectedImage.getPixelReader();
+        WritableImage skeletonImage = new WritableImage(width, height);
+        PixelWriter pixelWriter = skeletonImage.getPixelWriter();
 
-        // Копируем исходное изображение в currentImage
+        // Копируем изображение в writableImage
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                currentWriter.setColor(x, y, pixelReader.getColor(x, y));
+                int pixel = pixelReader.getArgb(x, y);
+                pixelWriter.setArgb(x, y, pixel);
             }
         }
 
-        WritableImage skeletonImage = new WritableImage(width, height); // для хранения остова
-        PixelWriter skeletonWriter = skeletonImage.getPixelWriter();
+        boolean[][] binaryData = new boolean[width][height];
 
-        boolean hasPixels = true;
+        // Заполняем бинарный массив (true - белый пиксель, false - чёрный)
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                binaryData[x][y] = (pixelReader.getArgb(x, y) & 0xFFFFFF) == 0xFFFFFF;
+            }
+        }
 
-        while (hasPixels) {
-            // 1. Выполняем эрозию
-            WritableImage erodedImage = new WritableImage(width, height);
-            performErosion(filterSize, currentImage.getPixelReader(), erodedImage.getPixelWriter());
+        boolean changed;
+        do {
+            changed = false;
+            boolean[][] tempData = new boolean[width][height];
 
-            // 2. Выполняем дилатацию эрозированного изображения
-            WritableImage dilatedImage = new WritableImage(width, height);
-            performDilation(filterSize, erodedImage.getPixelReader(), dilatedImage.getPixelWriter());
+            // Выполняем скелетизацию с учетом топологии
+            for (int y = 1; y < height - 1; y++) {
+                for (int x = 1; x < width - 1; x++) {
+                    if (binaryData[x][y]) {
+                        int whiteNeighborCount = countWhiteNeighbors(binaryData, x, y);
+                        int transitions = countTransitions(binaryData, x, y);
 
-            // 3. Вычитаем дилатированное изображение из текущего изображения
-            for (int y = 0; y < height; y++) {
-                for (int x = 0; x < width; x++) {
-                    Color originalColor = currentImage.getPixelReader().getColor(x, y);
-                    Color dilatedColor = dilatedImage.getPixelReader().getColor(x, y);
-
-                    // Вычисляем разницу, добавляя ее к остову
-                    double red = Math.max(0, originalColor.getRed() - dilatedColor.getRed());
-                    double green = Math.max(0, originalColor.getGreen() - dilatedColor.getGreen());
-                    double blue = Math.max(0, originalColor.getBlue() - dilatedColor.getBlue());
-
-                    Color skeletonColor = new Color(red, green, blue, 1.0);
-                    skeletonWriter.setColor(x, y, skeletonColor);
+                        // Условия удаления пикселя:
+                        // 1. У пикселя не менее 2 белых соседей и не более 6.
+                        // 2. Переходов от чёрного к белому 1 (связь с одним компонентом).
+                        // 3. Один из пикселей x-1, x+1, y-1, y+1 должен быть чёрным.
+                        if (whiteNeighborCount >= 2 && whiteNeighborCount <= 6 && transitions == 1 &&
+                                (!binaryData[x][y - 1] || !binaryData[x + 1][y] || !binaryData[x][y + 1] || !binaryData[x - 1][y])) {
+                            tempData[x][y] = false;
+                            changed = true;
+                        } else {
+                            tempData[x][y] = true;
+                        }
+                    }
                 }
             }
 
-            // 4. Проверяем, не стало ли изображение пустым после эрозии
-            hasPixels = hasNonBlackPixels(erodedImage);
+            // Обновляем массив после эрозии
+            for (int y = 1; y < height - 1; y++) {
+                for (int x = 1; x < width - 1; x++) {
+                    binaryData[x][y] = tempData[x][y];
+                }
+            }
 
-            // 5. Устанавливаем erodedImage как новое currentImage для следующей итерации
-            currentImage = erodedImage;
+        } while (changed);
+
+        // Записываем результат в WritableImage
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                if (binaryData[x][y]) {
+                    pixelWriter.setArgb(x, y, 0xFFFFFFFF); // Белый цвет
+                } else {
+                    pixelWriter.setArgb(x, y, 0xFF000000); // Чёрный цвет
+                }
+            }
         }
         imageViewOut.setImage(skeletonImage);
     }
@@ -1083,18 +1102,33 @@ public class Controller {
             }
         }
     }
-    private boolean hasNonBlackPixels(WritableImage image) {
-        PixelReader reader = image.getPixelReader();
-        int width = (int) image.getWidth();
-        int height = (int) image.getHeight();
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                Color color = reader.getColor(x, y);
-                if (color.getRed() > 0 || color.getGreen() > 0 || color.getBlue() > 0) {
-                    return true;
-                }
+
+    // Метод для подсчета количества белых соседей (связанных пикселей)
+    private int countWhiteNeighbors(boolean[][] data, int x, int y) {
+        int count = 0;
+        if (data[x - 1][y]) count++;
+        if (data[x + 1][y]) count++;
+        if (data[x][y - 1]) count++;
+        if (data[x][y + 1]) count++;
+        if (data[x - 1][y - 1]) count++;
+        if (data[x + 1][y - 1]) count++;
+        if (data[x - 1][y + 1]) count++;
+        if (data[x + 1][y + 1]) count++;
+        return count;
+    }
+
+    // Метод для подсчета переходов от чёрного к белому среди соседей (непрерывность)
+    private int countTransitions(boolean[][] data, int x, int y) {
+        int transitions = 0;
+        // Массив координат восьми соседей
+        int[][] neighbors = {{x - 1, y}, {x - 1, y + 1}, {x, y + 1}, {x + 1, y + 1},
+                {x + 1, y}, {x + 1, y - 1}, {x, y - 1}, {x - 1, y - 1}};
+
+        for (int i = 0; i < neighbors.length - 1; i++) {
+            if (!data[neighbors[i][0]][neighbors[i][1]] && data[neighbors[i + 1][0]][neighbors[i + 1][1]]) {
+                transitions++;
             }
         }
-        return false;
+        return transitions;
     }
 }
