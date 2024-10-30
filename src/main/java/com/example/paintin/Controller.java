@@ -71,6 +71,12 @@ public class Controller {
         effectComboBox.getItems().add("Фильтр максимума");
         effectComboBox.getItems().add("Фильтр минимума");
         effectComboBox.getItems().add("Фильтр срединной точки");
+        effectComboBox.getItems().add("Дилатация");
+        effectComboBox.getItems().add("Эрозия");
+        effectComboBox.getItems().add("Замыкание");
+        effectComboBox.getItems().add("Размыкание");
+        effectComboBox.getItems().add("Выделение границ");
+        effectComboBox.getItems().add("Остов");
 
         gammaSlider.setMin(0.0);
         gammaSlider.setMax(25);
@@ -180,6 +186,12 @@ public class Controller {
                 else if (selectedEffect.equals("Фильтр максимума")) applyMaxFilter(3); //Если нужно - организовать выбор размера
                 else if (selectedEffect.equals("Фильтр минимума")) applyMinFilter(3); //Если нужно - организовать выбор размера
                 else if (selectedEffect.equals("Фильтр срединной точки")) applyMidpointFilter(3); //Если нужно - организовать выбор размера
+                else if (selectedEffect.equals("Дилатация")) applyDilation(3); //Если нужно - организовать выбор размера
+                else if (selectedEffect.equals("Эрозия")) applyErosion(3); //Если нужно - организовать выбор размера
+                else if (selectedEffect.equals("Замыкание")) applyClosing(3); //Если нужно - организовать выбор размера
+                else if (selectedEffect.equals("Размыкание")) applyOpening(3); //Если нужно - организовать выбор размера
+                else if (selectedEffect.equals("Выделение границ")) applyEdgeDetection(3); //Если нужно - организовать выбор размера
+                else if (selectedEffect.equals("Остов")) applySkeletonization(3); //Если нужно - организовать выбор размера
             }
 
         }
@@ -812,6 +824,167 @@ public class Controller {
         }
         imageViewOut.setImage(midpointFilterImage);
     }
+    private void applyDilation(int filterSize) {
+
+        int width = (int) selectedImage.getWidth();
+        int height = (int) selectedImage.getHeight();
+
+        WritableImage dilatationFilterImage = new WritableImage(width, height);
+        PixelReader pixelReader = selectedImage.getPixelReader();
+        PixelWriter pixelWriter = dilatationFilterImage.getPixelWriter();
+
+        performDilation(filterSize, pixelReader, pixelWriter);
+
+        imageViewOut.setImage(dilatationFilterImage);
+    }
+    private void applyErosion(int filterSize) {
+
+        int width = (int) selectedImage.getWidth();
+        int height = (int) selectedImage.getHeight();
+
+        WritableImage erosionFilterImage = new WritableImage(width, height);
+        PixelReader pixelReader = selectedImage.getPixelReader();
+        PixelWriter pixelWriter = erosionFilterImage.getPixelWriter();
+
+        performErosion(filterSize, pixelReader, pixelWriter);
+
+        imageViewOut.setImage(erosionFilterImage);
+    }
+    private void applyClosing(int filterSize) {
+        int width = (int) selectedImage.getWidth();
+        int height = (int) selectedImage.getHeight();
+
+        WritableImage dilatedImage = new WritableImage(width, height);
+        WritableImage closingImage = new WritableImage(width, height);
+
+        PixelReader pixelReader = selectedImage.getPixelReader();
+        PixelWriter dilatedWriter = dilatedImage.getPixelWriter();
+
+        performDilation(filterSize, pixelReader, dilatedWriter);
+
+        PixelReader dilatedReader = dilatedImage.getPixelReader();
+        PixelWriter closingWriter = closingImage.getPixelWriter();
+        performErosion(filterSize, dilatedReader, closingWriter);
+
+        imageViewOut.setImage(closingImage);
+    }
+    private void applyOpening(int filterSize) {
+        int width = (int) selectedImage.getWidth();
+        int height = (int) selectedImage.getHeight();
+
+        // Промежуточное изображение для эрозии
+        WritableImage erodedImage = new WritableImage(width, height);
+        PixelReader pixelReader = selectedImage.getPixelReader();
+        PixelWriter erodedWriter = erodedImage.getPixelWriter();
+
+        // Шаг 1: Выполняем эрозию
+        performErosion(filterSize, pixelReader, erodedWriter);
+
+        // Шаг 2: Выполняем дилатацию на эрозированном изображении и записываем результат в openedImage
+        WritableImage openedImage = new WritableImage(width, height); // Результирующее изображение
+        PixelReader erodedReader = erodedImage.getPixelReader();
+        PixelWriter openingWriter = openedImage.getPixelWriter();
+        performDilation(filterSize, erodedReader, openingWriter);
+
+        imageViewOut.setImage(openedImage);
+    }
+    private void applyEdgeDetection(int filterSize) {
+        int width = (int) selectedImage.getWidth();
+        int height = (int) selectedImage.getHeight();
+
+        // Промежуточное изображение для эрозии
+        WritableImage erodedImage = new WritableImage(width, height);
+        PixelReader pixelReader = selectedImage.getPixelReader();
+        PixelWriter erodedWriter = erodedImage.getPixelWriter();
+
+        // Шаг 1: Выполняем эрозию на исходном изображении
+        performErosion(filterSize, pixelReader, erodedWriter);
+
+        // Шаг 2: Вычисляем разницу между исходным изображением и эрозированным
+        WritableImage edgeImage = new WritableImage(width, height);
+        PixelReader erodedReader = erodedImage.getPixelReader();
+        PixelWriter edgeWriter = edgeImage.getPixelWriter();
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                // Получаем исходный цвет и эрозированный цвет
+                Color originalColor = pixelReader.getColor(x, y);
+                Color erodedColor = erodedReader.getColor(x, y);
+
+                // Вычисляем разницу, которая является границей
+                double red = Math.max(0, originalColor.getRed() - erodedColor.getRed());
+                double green = Math.max(0, originalColor.getGreen() - erodedColor.getGreen());
+                double blue = Math.max(0, originalColor.getBlue() - erodedColor.getBlue());
+
+                Color edgeColor = new Color(red, green, blue, 1.0);
+                edgeWriter.setColor(x, y, edgeColor);
+            }
+        }
+        imageViewOut.setImage(edgeImage);
+    }
+    private void applySkeletonization(int filterSize) {
+
+        int width = (int) selectedImage.getWidth();
+        int height = (int) selectedImage.getHeight();
+
+        WritableImage currentImage = new WritableImage(width, height);
+        PixelWriter currentWriter = currentImage.getPixelWriter();
+        PixelReader pixelReader = selectedImage.getPixelReader();
+
+        // Копируем исходное изображение в currentImage
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                currentWriter.setColor(x, y, pixelReader.getColor(x, y));
+            }
+        }
+
+        WritableImage skeletonImage = new WritableImage(width, height); // для хранения остова
+        PixelWriter skeletonWriter = skeletonImage.getPixelWriter();
+
+        boolean hasPixels = true;
+
+        while (hasPixels) {
+            // 1. Выполняем эрозию
+            WritableImage erodedImage = new WritableImage(width, height);
+            performErosion(filterSize, currentImage.getPixelReader(), erodedImage.getPixelWriter());
+
+            // 2. Выполняем дилатацию эрозированного изображения
+            WritableImage dilatedImage = new WritableImage(width, height);
+            performDilation(filterSize, erodedImage.getPixelReader(), dilatedImage.getPixelWriter());
+
+            // 3. Вычитаем дилатированное изображение из текущего изображения
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    Color originalColor = currentImage.getPixelReader().getColor(x, y);
+                    Color dilatedColor = dilatedImage.getPixelReader().getColor(x, y);
+
+                    // Вычисляем разницу, добавляя ее к остову
+                    double red = Math.max(0, originalColor.getRed() - dilatedColor.getRed());
+                    double green = Math.max(0, originalColor.getGreen() - dilatedColor.getGreen());
+                    double blue = Math.max(0, originalColor.getBlue() - dilatedColor.getBlue());
+
+                    Color skeletonColor = new Color(red, green, blue, 1.0);
+                    skeletonWriter.setColor(x, y, skeletonColor);
+                }
+            }
+
+            // 4. Проверяем, не стало ли изображение пустым после эрозии
+            hasPixels = hasNonBlackPixels(erodedImage);
+
+            // 5. Устанавливаем erodedImage как новое currentImage для следующей итерации
+            currentImage = erodedImage;
+        }
+        imageViewOut.setImage(skeletonImage);
+    }
+
+
+
+
+
+
+
+
+
 
 
 
@@ -851,5 +1024,77 @@ public class Controller {
         } else {
             return values.get(middle);
         }
+    }
+    private void performDilation(int filterSize, PixelReader reader, PixelWriter writer) {
+        int width = (int) selectedImage.getWidth();
+        int height = (int) selectedImage.getHeight();
+        int radius = filterSize / 2;
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int maxRed = 0, maxGreen = 0, maxBlue = 0;
+
+                for (int dy = -radius; dy <= radius; dy++) {
+                    for (int dx = -radius; dx <= radius; dx++) {
+                        int nx = x + dx;
+                        int ny = y + dy;
+
+                        if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                            Color color = reader.getColor(nx, ny);
+
+                            maxRed = Math.max(maxRed, (int) (color.getRed() * 255));
+                            maxGreen = Math.max(maxGreen, (int) (color.getGreen() * 255));
+                            maxBlue = Math.max(maxBlue, (int) (color.getBlue() * 255));
+                        }
+                    }
+                }
+
+                Color maxColor = Color.rgb(maxRed, maxGreen, maxBlue);
+                writer.setColor(x, y, maxColor);
+            }
+        }
+    }
+    private void performErosion(int filterSize, PixelReader reader, PixelWriter writer) {
+        int width = (int) selectedImage.getWidth();
+        int height = (int) selectedImage.getHeight();
+        int radius = filterSize / 2;
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int minRed = 255, minGreen = 255, minBlue = 255;
+
+                for (int dy = -radius; dy <= radius; dy++) {
+                    for (int dx = -radius; dx <= radius; dx++) {
+                        int nx = x + dx;
+                        int ny = y + dy;
+
+                        if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                            Color color = reader.getColor(nx, ny);
+
+                            minRed = Math.min(minRed, (int) (color.getRed() * 255));
+                            minGreen = Math.min(minGreen, (int) (color.getGreen() * 255));
+                            minBlue = Math.min(minBlue, (int) (color.getBlue() * 255));
+                        }
+                    }
+                }
+
+                Color minColor = Color.rgb(minRed, minGreen, minBlue);
+                writer.setColor(x, y, minColor);
+            }
+        }
+    }
+    private boolean hasNonBlackPixels(WritableImage image) {
+        PixelReader reader = image.getPixelReader();
+        int width = (int) image.getWidth();
+        int height = (int) image.getHeight();
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                Color color = reader.getColor(x, y);
+                if (color.getRed() > 0 || color.getGreen() > 0 || color.getBlue() > 0) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }
