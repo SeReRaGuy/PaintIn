@@ -25,7 +25,7 @@ public class HistogramViewer {
 
     public void showHistogram() {
         Stage stage = new Stage();
-        stage.setTitle("Histogram");
+        stage.setTitle("Гистограмма");
 
         BorderPane root = new BorderPane();
         Canvas canvas = new Canvas(512, 400);

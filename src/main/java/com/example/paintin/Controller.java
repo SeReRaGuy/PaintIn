@@ -2,17 +2,18 @@ package com.example.paintin;
 
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.image.*;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
-import java.awt.image.BufferedImage;
-import javax.imageio.ImageIO;
-import java.io.IOException;
-import javafx.embed.swing.SwingFXUtils;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -24,8 +25,6 @@ public class Controller {
     private ImageView imageViewIn;
     @FXML
     private ImageView imageViewOut;
-    @FXML
-    private TextArea helpText;
     @FXML
     private ComboBox<String> effectComboBox;
     @FXML
@@ -52,6 +51,8 @@ public class Controller {
     private Button histogramButton;
     @FXML
     private TextField maskSizeText;
+    @FXML
+    private TextField moveImageField;
     private Image selectedImage;
     private Image outputImage;
     private FileChooser chooser = new FileChooser();
@@ -86,11 +87,15 @@ public class Controller {
         effectComboBox.getItems().add("Выделение границ");
         effectComboBox.getItems().add("Остов");
 
+        moveImageField.setText("Сместить изображения");
+
         gammaSlider.setMin(0.0);
         gammaSlider.setMax(25);
+        gammaText.setText("0");
 
         thresholdSlider.setMin(0.0);
         thresholdSlider.setMax(1.0);
+        thresholdText.setText("0");
 
         imageSlider.setMin(-20);
         imageSlider.setMax(100);
@@ -129,8 +134,7 @@ public class Controller {
                         thresholdSlider.setVisible(true);
                         thresholdText.setVisible(true);
                     }
-                    if (newValue.equals("Однородный усредняющий фильтр") || newValue.equals("Медианный фильтр") || newValue.equals("Фильтр максимума") || newValue.equals("Фильтр минимума") || newValue.equals("Фильтр срединной точки") || newValue.equals("Дилатация") || newValue.equals("Эрозия") || newValue.equals("Замыкание") || newValue.equals("Размыкание") || newValue.equals("Выделение границ"))
-                    {
+                    if (newValue.equals("Однородный усредняющий фильтр") || newValue.equals("Медианный фильтр") || newValue.equals("Фильтр максимума") || newValue.equals("Фильтр минимума") || newValue.equals("Фильтр срединной точки") || newValue.equals("Дилатация") || newValue.equals("Эрозия") || newValue.equals("Замыкание") || newValue.equals("Размыкание") || newValue.equals("Выделение границ")) {
                         maskSizeSlider.setVisible(true);
                         maskSizeText.setVisible(true);
                     }
@@ -144,7 +148,6 @@ public class Controller {
             public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
                 if (selectedImage != null && gammaSlider.isVisible()) {
                     applyGammaCorrection(gammaSlider.getValue());
-                    helpText.setText(String.valueOf(gammaSlider.getValue()));
                     gammaText.setText(String.valueOf(gammaSlider.getValue()));
                 }
             }
@@ -156,7 +159,6 @@ public class Controller {
             public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
                 if (selectedImage != null) {
                     moveImage(imageSlider.getValue());
-                    helpText.setText(String.valueOf(imageSlider.getValue()));
                 }
             }
         });
@@ -166,7 +168,7 @@ public class Controller {
             public void changed(ObservableValue<? extends Number> observableValue, Number oldValue, Number newValue) {
                 if (selectedImage != null) {
                     applyThresholdFilter(thresholdSlider.getValue());
-                    helpText.setText(String.valueOf(thresholdSlider.getValue()));
+                    thresholdText.setText(String.valueOf(thresholdSlider.getValue()));
                 }
             }
         });
@@ -176,7 +178,6 @@ public class Controller {
             public void changed(ObservableValue<? extends Number> observableValue, Number number, Number t1) {
                 maskSize = (int) maskSizeSlider.getValue();
                 maskSizeText.setText("Текущий размер маски : " + maskSize);
-                helpText.setText("maskSize = " + maskSize);
             }
         });
     }
@@ -189,45 +190,80 @@ public class Controller {
         if (selectedFile != null) {
             selectedImage = new Image(selectedFile.toURI().toString());
             imageViewIn.setImage(selectedImage);
-            helpText.setText(selectedImage.getHeight() + " / " + selectedImage.getWidth() + " = " + (selectedImage.getHeight() / selectedImage.getWidth()));
         }
     }
 
     @FXML
     public void onSaveImage() {
-        // Создаем диалоговое окно для выбора места сохранения файла
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Сохранить изображение");
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PNG Image", "*.png"));
+        if (selectedImage != null) {
+            if (outputImage != null) {
+                FileChooser fileChooser = new FileChooser();
+                fileChooser.setTitle("Сохранить изображение");
+                fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PNG Image", "*.png"));
 
-        // Открываем диалоговое окно и получаем выбранный файл
-        File file = fileChooser.showSaveDialog(null);
+                // Открываем диалоговое окно и получаем выбранный файл
+                File file = fileChooser.showSaveDialog(null);
 
-        if (file != null) {
-            // Проверяем, имеет ли файл расширение .png, и добавляем его, если отсутствует
-            if (!file.getName().toLowerCase().endsWith(".png")) {
-                file = new File(file.getAbsolutePath() + ".png");
+                if (file != null) {
+                    // Проверяем, имеет ли файл расширение .png, и добавляем его, если отсутствует
+                    if (!file.getName().toLowerCase().endsWith(".png")) {
+                        file = new File(file.getAbsolutePath() + ".png");
+                    }
+
+                    // Преобразуем изображение из JavaFX в BufferedImage и сохраняем его
+                    BufferedImage bufferedImage = SwingFXUtils.fromFXImage(outputImage, null);
+                    try {
+                        ImageIO.write(bufferedImage, "png", file);
+                        System.out.println("Изображение сохранено: " + file.getAbsolutePath());
+                    } catch (IOException e) {
+                        System.err.println("Ошибка сохранения изображения: " + e.getMessage());
+                    }
+                }
+            } else {
+                Alert alert = new Alert(AlertType.ERROR);
+                alert.setTitle("Ошибка");
+                alert.setHeaderText("Нет преобразованного изображения");
+                alert.setContentText("Пожалуйста, примените какой-нибудь эффект, чтобы получить преобразованное изображение.");
+
+                alert.showAndWait();
             }
 
-            // Преобразуем изображение из JavaFX в BufferedImage и сохраняем его
-            BufferedImage bufferedImage = SwingFXUtils.fromFXImage(outputImage, null);
-            try {
-                ImageIO.write(bufferedImage, "png", file);
-                System.out.println("Изображение сохранено: " + file.getAbsolutePath());
-            } catch (IOException e) {
-                System.err.println("Ошибка сохранения изображения: " + e.getMessage());
-            }
+        } else {
+            Alert alert = new Alert(AlertType.ERROR);
+            alert.setTitle("Ошибка");
+            alert.setHeaderText("Нет преобразованного изображения");
+            alert.setContentText("Пожалуйста, загрузите изображение и примените какой-нибудь эффект, чтобы получить преобразованное изображение.");
+
+            alert.showAndWait();
         }
     }
 
     @FXML
     public void onSwapImages() {
-        Image bufferImage;
-        bufferImage = selectedImage;
-        selectedImage = outputImage;
-        outputImage = bufferImage;
-        imageViewIn.setImage(selectedImage);
-        imageViewOut.setImage(outputImage);
+        if (selectedImage != null) {
+            if (outputImage != null) {
+                Image bufferImage;
+                bufferImage = selectedImage;
+                selectedImage = outputImage;
+                outputImage = bufferImage;
+                imageViewIn.setImage(selectedImage);
+                imageViewOut.setImage(outputImage);
+            } else {
+                Alert alert = new Alert(AlertType.ERROR);
+                alert.setTitle("Ошибка");
+                alert.setHeaderText("Нет второго изображения");
+                alert.setContentText("Пожалуйста, примените какой-нибудь эффект, чтобы появилось второе изображение.");
+
+                alert.showAndWait();
+            }
+        } else {
+            Alert alert = new Alert(AlertType.ERROR);
+            alert.setTitle("Ошибка");
+            alert.setHeaderText("Не загружено изображение");
+            alert.setContentText("Пожалуйста, загрузите изображение перед применением.");
+
+            alert.showAndWait();
+        }
     }
 
     @FXML
@@ -235,38 +271,45 @@ public class Controller {
         if (selectedImage != null) {
             String selectedEffect = effectComboBox.getValue();
             if (selectedEffect != null) {
-                if (selectedEffect.equals("Негатив")) applyNegative();
-                else if (selectedEffect.equals("Гамма-коррекция"))
-                    applyGammaCorrection(Double.parseDouble(gammaText.getText()));
-                else if (selectedEffect.equals("Градиент Робертса")) applyRobertsOperator();
-                else if (selectedEffect.equals("Градиент Собела")) applySobelOperator();
-                else if (selectedEffect.equals("Метод Лапласиана")) applyLaplacianOperator();
-                else if (selectedEffect.equals("Эквализация гистограммы (ЧБ)")) applyEqualizeHistogram();
-                else if (selectedEffect.equals("Порог бинаризации"))
-                    applyThresholdFilter(Double.parseDouble(thresholdText.getText()));
-                else if (selectedEffect.equals("Пороговый фильтр методом Оцу")) applyOtsuThresholdFilter();
-                else if (selectedEffect.equals("Однородный усредняющий фильтр"))
-                    applyHomogeneousAveragingFilter(maskSize);
-                else if (selectedEffect.equals("Неоднородный усредняющий фильтр"))
-                    applyInhomogeneousAveragingFilter(inhomogeneousAveragingFilter);
-                else if (selectedEffect.equals("Медианный фильтр"))
-                    applyMedianFilter(maskSize);
-                else if (selectedEffect.equals("Фильтр максимума"))
-                    applyMaxFilter(maskSize);
-                else if (selectedEffect.equals("Фильтр минимума"))
-                    applyMinFilter(maskSize);
-                else if (selectedEffect.equals("Фильтр срединной точки"))
-                    applyMidpointFilter(maskSize);
-                else if (selectedEffect.equals("Дилатация")) applyDilation(maskSize);
-                else if (selectedEffect.equals("Эрозия")) applyErosion(maskSize);
-                else if (selectedEffect.equals("Замыкание")) applyClosing(maskSize);
-                else if (selectedEffect.equals("Размыкание")) applyOpening(maskSize);
-                else if (selectedEffect.equals("Выделение границ"))
-                    applyEdgeDetection(maskSize);
-                else if (selectedEffect.equals("Остов"))
-                    applySkeletonization(); //Если нужно - организовать выбор размера
+                switch (selectedEffect) {
+                    case "Негатив" -> applyNegative();
+                    case "Гамма-коррекция" -> applyGammaCorrection(Double.parseDouble(gammaText.getText()));
+                    case "Градиент Робертса" -> applyRobertsOperator();
+                    case "Градиент Собела" -> applySobelOperator();
+                    case "Метод Лапласиана" -> applyLaplacianOperator();
+                    case "Эквализация гистограммы (ЧБ)" -> applyEqualizeHistogram();
+                    case "Порог бинаризации" -> applyThresholdFilter(Double.parseDouble(thresholdText.getText()));
+                    case "Пороговый фильтр методом Оцу" -> applyOtsuThresholdFilter();
+                    case "Однородный усредняющий фильтр" -> applyHomogeneousAveragingFilter(maskSize);
+                    case "Неоднородный усредняющий фильтр" ->
+                            applyInhomogeneousAveragingFilter(inhomogeneousAveragingFilter);
+                    case "Медианный фильтр" -> applyMedianFilter(maskSize);
+                    case "Фильтр максимума" -> applyMaxFilter(maskSize);
+                    case "Фильтр минимума" -> applyMinFilter(maskSize);
+                    case "Фильтр срединной точки" -> applyMidpointFilter(maskSize);
+                    case "Дилатация" -> applyDilation(maskSize);
+                    case "Эрозия" -> applyErosion(maskSize);
+                    case "Замыкание" -> applyClosing(maskSize);
+                    case "Размыкание" -> applyOpening(maskSize);
+                    case "Выделение границ" -> applyEdgeDetection(maskSize);
+                    case "Остов" -> applySkeletonization();
+                }
+            } else {
+                Alert alert = new Alert(AlertType.ERROR);
+                alert.setTitle("Ошибка");
+                alert.setHeaderText("Не выбран эффект");
+                alert.setContentText("Пожалуйста, выберите эффект из списка перед применением.");
+
+                alert.showAndWait();
             }
 
+        } else {
+            Alert alert = new Alert(AlertType.ERROR);
+            alert.setTitle("Ошибка");
+            alert.setHeaderText("Не выбрано изображение");
+            alert.setContentText("Пожалуйста, выберите изображение перед применением.");
+
+            alert.showAndWait();
         }
     }
 
@@ -289,8 +332,7 @@ public class Controller {
             if (onOriginalCheck.isSelected()) {
                 imageViewIn.setImage(negativeImage);
                 selectedImage = negativeImage;
-            } else
-            {
+            } else {
                 imageViewOut.setImage(negativeImage);
                 outputImage = negativeImage;
             }
@@ -299,28 +341,37 @@ public class Controller {
     }
 
     private void applyGammaCorrection(double gamma) {
-        int width = (int) selectedImage.getWidth();
-        int height = (int) selectedImage.getHeight();
+        if (gamma >= 0) {
+            int width = (int) selectedImage.getWidth();
+            int height = (int) selectedImage.getHeight();
 
-        WritableImage gammaImage = new WritableImage(width, height);
-        PixelReader reader = selectedImage.getPixelReader();
-        PixelWriter writer = gammaImage.getPixelWriter();
+            WritableImage gammaImage = new WritableImage(width, height);
+            PixelReader reader = selectedImage.getPixelReader();
+            PixelWriter writer = gammaImage.getPixelWriter();
 
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                Color color = reader.getColor(x, y);
-                Color gammaColor = Color.color(Math.pow(color.getRed(), gamma), Math.pow(color.getGreen(), gamma), Math.pow(color.getBlue(), gamma), color.getOpacity());
-                writer.setColor(x, y, gammaColor);
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    Color color = reader.getColor(x, y);
+                    Color gammaColor = Color.color(Math.pow(color.getRed(), gamma), Math.pow(color.getGreen(), gamma), Math.pow(color.getBlue(), gamma), color.getOpacity());
+                    writer.setColor(x, y, gammaColor);
+                }
             }
-        }
 
-        if (onOriginalCheck.isSelected()) {
-            imageViewIn.setImage(gammaImage);
-            selectedImage = gammaImage;
-        } else
-        {
-            imageViewOut.setImage(gammaImage);
-            outputImage = gammaImage;
+            if (onOriginalCheck.isSelected()) {
+                imageViewIn.setImage(gammaImage);
+                selectedImage = gammaImage;
+            } else {
+                imageViewOut.setImage(gammaImage);
+                outputImage = gammaImage;
+            }
+
+        }else {
+            Alert alert = new Alert(AlertType.ERROR);
+            alert.setTitle("Ошибка");
+            alert.setHeaderText("Неверное значение");
+            alert.setContentText("Пожалуйста, введите значение, не меньшее 0.");
+
+            alert.showAndWait();
         }
     }
 
@@ -370,8 +421,7 @@ public class Controller {
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(robertsImage);
             selectedImage = robertsImage;
-        } else
-        {
+        } else {
             imageViewOut.setImage(robertsImage);
             outputImage = robertsImage;
         }
@@ -433,8 +483,7 @@ public class Controller {
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(sobelImage);
             selectedImage = sobelImage;
-        } else
-        {
+        } else {
             imageViewOut.setImage(sobelImage);
             outputImage = sobelImage;
         }
@@ -516,11 +565,18 @@ public class Controller {
             if (onOriginalCheck.isSelected()) {
                 imageViewIn.setImage(combinedImage);
                 selectedImage = combinedImage;
-            } else
-            {
+            } else {
                 imageViewOut.setImage(combinedImage);
                 outputImage = combinedImage;
             }
+        }
+        else {
+            Alert alert = new Alert(AlertType.ERROR);
+            alert.setTitle("Ошибка");
+            alert.setHeaderText("Не выбран ни один вариант");
+            alert.setContentText("Пожалуйста, выберите тип выводимого изображения.");
+
+            alert.showAndWait();
         }
     }
 
@@ -577,14 +633,14 @@ public class Controller {
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(equalizedImage);
             selectedImage = equalizedImage;
-        } else
-        {
+        } else {
             imageViewOut.setImage(equalizedImage);
             outputImage = equalizedImage;
         }
     }
 
     public void applyThresholdFilter(double threshold) {
+        if (threshold >= 0){
         int width = (int) selectedImage.getWidth();
         int height = (int) selectedImage.getHeight();
 
@@ -611,10 +667,16 @@ public class Controller {
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(thresholdImage);
             selectedImage = thresholdImage;
-        } else
-        {
+        } else {
             imageViewOut.setImage(thresholdImage);
             outputImage = thresholdImage;
+        }} else {
+            Alert alert = new Alert(AlertType.ERROR);
+            alert.setTitle("Ошибка");
+            alert.setHeaderText("Неверное значение");
+            alert.setContentText("Пожалуйста, введите значение, не меньшее 0.");
+
+            alert.showAndWait();
         }
     }
 
@@ -684,8 +746,7 @@ public class Controller {
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(OtsuThresholdImage);
             selectedImage = OtsuThresholdImage;
-        } else
-        {
+        } else {
             imageViewOut.setImage(OtsuThresholdImage);
             outputImage = OtsuThresholdImage;
         }
@@ -738,8 +799,7 @@ public class Controller {
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(homogeneousAveragingImage);
             selectedImage = homogeneousAveragingImage;
-        } else
-        {
+        } else {
             imageViewOut.setImage(homogeneousAveragingImage);
             outputImage = homogeneousAveragingImage;
         }
@@ -795,8 +855,7 @@ public class Controller {
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(inhomogeneousAveragingImage);
             selectedImage = inhomogeneousAveragingImage;
-        } else
-        {
+        } else {
             imageViewOut.setImage(inhomogeneousAveragingImage);
             outputImage = inhomogeneousAveragingImage;
         }
@@ -849,8 +908,7 @@ public class Controller {
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(medianFilterImage);
             selectedImage = medianFilterImage;
-        } else
-        {
+        } else {
             imageViewOut.setImage(medianFilterImage);
             outputImage = medianFilterImage;
         }
@@ -897,8 +955,7 @@ public class Controller {
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(maxFilterImage);
             selectedImage = maxFilterImage;
-        } else
-        {
+        } else {
             imageViewOut.setImage(maxFilterImage);
             outputImage = maxFilterImage;
         }
@@ -944,8 +1001,7 @@ public class Controller {
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(minFilterImage);
             selectedImage = minFilterImage;
-        } else
-        {
+        } else {
             imageViewOut.setImage(minFilterImage);
             outputImage = minFilterImage;
         }
@@ -1002,8 +1058,7 @@ public class Controller {
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(midpointFilterImage);
             selectedImage = midpointFilterImage;
-        } else
-        {
+        } else {
             imageViewOut.setImage(midpointFilterImage);
             outputImage = midpointFilterImage;
         }
@@ -1023,8 +1078,7 @@ public class Controller {
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(dilatationFilterImage);
             selectedImage = dilatationFilterImage;
-        } else
-        {
+        } else {
             imageViewOut.setImage(dilatationFilterImage);
             outputImage = dilatationFilterImage;
         }
@@ -1044,8 +1098,7 @@ public class Controller {
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(erosionFilterImage);
             selectedImage = erosionFilterImage;
-        } else
-        {
+        } else {
             imageViewOut.setImage(erosionFilterImage);
             outputImage = erosionFilterImage;
         }
@@ -1070,8 +1123,7 @@ public class Controller {
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(closingImage);
             selectedImage = closingImage;
-        } else
-        {
+        } else {
             imageViewOut.setImage(closingImage);
             outputImage = closingImage;
         }
@@ -1098,8 +1150,7 @@ public class Controller {
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(openedImage);
             selectedImage = openedImage;
-        } else
-        {
+        } else {
             imageViewOut.setImage(openedImage);
             outputImage = openedImage;
         }
@@ -1140,8 +1191,7 @@ public class Controller {
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(edgeImage);
             selectedImage = edgeImage;
-        } else
-        {
+        } else {
             imageViewOut.setImage(edgeImage);
             outputImage = edgeImage;
         }
@@ -1221,8 +1271,7 @@ public class Controller {
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(skeletonImage);
             selectedImage = skeletonImage;
-        } else
-        {
+        } else {
             imageViewOut.setImage(skeletonImage);
             outputImage = skeletonImage;
         }
@@ -1243,7 +1292,7 @@ public class Controller {
             histogramViewer.showHistogram(); //showEqualizedImage showHistogram
         } else {
             // Добавьте уведомление для пользователя, если изображение не выбрано
-            Alert alert = new Alert(Alert.AlertType.WARNING);
+            Alert alert = new Alert(AlertType.ERROR);
             alert.setTitle("Предупреждение");
             alert.setHeaderText("Изображение не выбрано");
             alert.setContentText("Пожалуйста, выберите изображение перед открытием гистограммы.");

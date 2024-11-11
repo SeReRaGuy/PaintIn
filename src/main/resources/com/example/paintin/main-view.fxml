@@ -6,25 +6,22 @@
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.RadioButton?>
 <?import javafx.scene.control.Slider?>
-<?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.AnchorPane?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="720.0" prefWidth="1152.0" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.paintin.Controller">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="1152.0" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.paintin.Controller">
    <children>
-      <ImageView fx:id="Background" fitHeight="720.0" fitWidth="1152.0" nodeOrientation="INHERIT" pickOnBounds="true">
+      <ImageView fx:id="Background" fitHeight="800.0" fitWidth="1152.0" nodeOrientation="INHERIT" pickOnBounds="true">
          <image>
             <Image url="@Background.png" />
          </image>
       </ImageView>
-      <Button fx:id="selectButton" layoutX="14.0" layoutY="537.0" mnemonicParsing="false" onMouseClicked="#onChooseImage" text="Загрузить" />
       <ImageView fx:id="imageViewIn" fitHeight="516.0" fitWidth="554.0" layoutX="13.0" layoutY="14.0" nodeOrientation="INHERIT" pickOnBounds="true" preserveRatio="true">
          <image>
             <Image url="@BackgroundImage.png" />
          </image></ImageView>
-      <Button fx:id="applyEffectButton" layoutX="98.0" layoutY="537.0" mnemonicParsing="false" onMouseClicked="#onApplyEffect" prefHeight="25.0" prefWidth="251.0" text="Преобразовать" />
       <ImageView fx:id="imageViewOut" fitHeight="516.0" fitWidth="554.0" layoutX="584.0" layoutY="14.0" nodeOrientation="INHERIT" pickOnBounds="true" preserveRatio="true">
          <image>
             <Image url="@BackgroundImage.png" />
@@ -33,23 +30,23 @@
             <Rectangle2D />
          </viewport>
       </ImageView>
-      <TextArea fx:id="helpText" editable="false" layoutX="938.0" layoutY="540.0" prefHeight="60.0" prefWidth="200.0" />
-      <ComboBox fx:id="effectComboBox" layoutX="14.0" layoutY="570.0" prefHeight="25.0" prefWidth="335.0" promptText="Выберите эффект">
+      <Button fx:id="selectButton" layoutX="14.0" layoutY="596.0" mnemonicParsing="false" onMouseClicked="#onChooseImage" text="Загрузить" />
+      <Button fx:id="applyEffectButton" layoutX="98.0" layoutY="596.0" mnemonicParsing="false" onMouseClicked="#onApplyEffect" prefHeight="25.0" prefWidth="251.0" text="Преобразовать" />
+      <ComboBox fx:id="effectComboBox" layoutX="14.0" layoutY="629.0" prefHeight="25.0" prefWidth="335.0" promptText="Выберите эффект">
       </ComboBox>
-      <Slider fx:id="gammaSlider" layoutX="360.0" layoutY="543.0" prefHeight="14.0" prefWidth="200.0" visible="false" />
-      <TextField fx:id="gammaText" layoutX="360.0" layoutY="562.0" prefHeight="25.0" prefWidth="200.0" promptText="Изменить y - гамма" visible="false" />
-      <TextField editable="false" layoutX="938.0" layoutY="608.0" prefHeight="25.0" prefWidth="200.0" promptText="Вывод для программиста" />
-      <Slider fx:id="imageSlider" layoutX="729.0" layoutY="543.0" prefHeight="14.0" prefWidth="200.0" />
-      <TextField editable="false" layoutX="729.0" layoutY="562.0" prefHeight="25.0" prefWidth="200.0" promptText="Сместить изображение" />
-      <RadioButton fx:id="laplasianRadio" layoutX="360.0" layoutY="541.0" mnemonicParsing="false" text="Лапласиан" visible="false" />
-      <RadioButton fx:id="laplasianOrigRadio" layoutX="360.0" layoutY="562.0" mnemonicParsing="false" text="Лапласиан + изображение" visible="false" />
-      <Button fx:id="histogramButton" layoutX="14.0" layoutY="608.0" mnemonicParsing="false" onMouseClicked="#onShowHistogram" prefHeight="25.0" prefWidth="335.0" text="Гистограмма изображения" />
-      <Slider fx:id="thresholdSlider" layoutX="370.0" layoutY="553.0" prefHeight="14.0" prefWidth="200.0" visible="false" />
-      <TextField fx:id="thresholdText" layoutX="370.0" layoutY="572.0" prefHeight="25.0" prefWidth="200.0" promptText="Изменить y - гамма" visible="false" />
-      <CheckBox fx:id="onOriginalCheck" layoutX="65.0" layoutY="646.0" mnemonicParsing="false" text="Заменить оригинальное изображение" />
-      <Button fx:id="saveButton" layoutX="14.0" layoutY="673.0" mnemonicParsing="false" onMouseClicked="#onSaveImage" prefHeight="36.0" prefWidth="335.0" text="Сохранить изображение" />
-      <Button fx:id="swapButton" layoutX="363.0" layoutY="673.0" mnemonicParsing="false" onMouseClicked="#onSwapImages" prefHeight="36.0" prefWidth="335.0" text="Поменять картинки местами" />
-      <Slider fx:id="maskSizeSlider" layoutX="360.0" layoutY="648.0" prefHeight="14.0" prefWidth="335.0" visible="false" />
-      <TextField fx:id="maskSizeText" editable="false" layoutX="363.0" layoutY="621.0" prefHeight="25.0" prefWidth="335.0" promptText="Измените значение маски" visible="false" />
+      <Slider fx:id="gammaSlider" layoutX="360.0" layoutY="602.0" prefHeight="14.0" prefWidth="200.0" visible="false" />
+      <TextField fx:id="gammaText" layoutX="360.0" layoutY="621.0" prefHeight="25.0" prefWidth="200.0" promptText="Изменить y - гамма" stylesheets="@style.css" visible="false" />
+      <Slider fx:id="imageSlider" layoutX="938.0" layoutY="599.0" prefHeight="14.0" prefWidth="200.0" />
+      <TextField fx:id="moveImageField" editable="false" layoutX="938.0" layoutY="618.0" prefHeight="25.0" prefWidth="200.0" promptText="Сместить изображение" stylesheets="@style.css" />
+      <RadioButton fx:id="laplasianRadio" layoutX="360.0" layoutY="600.0" mnemonicParsing="false" text="Лапласиан" visible="false" />
+      <RadioButton fx:id="laplasianOrigRadio" layoutX="360.0" layoutY="621.0" mnemonicParsing="false" text="Лапласиан + изображение" visible="false" />
+      <Button fx:id="histogramButton" layoutX="14.0" layoutY="667.0" mnemonicParsing="false" onMouseClicked="#onShowHistogram" prefHeight="25.0" prefWidth="335.0" text="Гистограмма изображения" />
+      <Slider fx:id="thresholdSlider" layoutX="370.0" layoutY="612.0" prefHeight="14.0" prefWidth="200.0" visible="false" />
+      <TextField fx:id="thresholdText" layoutX="370.0" layoutY="631.0" prefHeight="25.0" prefWidth="200.0" promptText="Изменить y - гамма" stylesheets="@style.css" visible="false" />
+      <CheckBox fx:id="onOriginalCheck" layoutX="65.0" layoutY="705.0" mnemonicParsing="false" text="Заменить оригинальное изображение" />
+      <Button fx:id="saveButton" layoutX="14.0" layoutY="732.0" mnemonicParsing="false" onMouseClicked="#onSaveImage" prefHeight="36.0" prefWidth="335.0" text="Сохранить изображение" />
+      <Button fx:id="swapButton" layoutX="363.0" layoutY="732.0" mnemonicParsing="false" onMouseClicked="#onSwapImages" prefHeight="36.0" prefWidth="335.0" text="Поменять картинки местами" />
+      <Slider fx:id="maskSizeSlider" layoutX="360.0" layoutY="707.0" prefHeight="14.0" prefWidth="335.0" visible="false" />
+      <TextField fx:id="maskSizeText" editable="false" layoutX="363.0" layoutY="680.0" prefHeight="25.0" prefWidth="335.0" promptText="Измените значение маски" stylesheets="@style.css" visible="false" />
    </children>
 </AnchorPane>

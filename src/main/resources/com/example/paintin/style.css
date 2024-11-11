@@ -1,7 +1,29 @@
 .radio-button {
-    -fx-text-fill: white;
+    -fx-text-fill: #000000;
 }
 
 .check-box{
-    -fx-text-fill: white;
+    -fx-text-fill: #000000;
+}
+.button {
+    -fx-background-color: linear-gradient(to bottom, #575757, #000000);
+    -fx-text-fill: #ffffff;
+    -fx-background-radius: 5;
+    -fx-border-radius: 5;
+    -fx-font-weight: bold;
+}
+
+.text-field {
+    -fx-background-color: linear-gradient(to bottom, #e3e3e3, #bdbdbd);
+    -fx-text-fill: #000000;
+    -fx-background-radius: 5;
+    -fx-border-radius: 5;
+    -fx-font-weight: bold;
+}
+
+.combo-box{
+    -fx-background-color: linear-gradient(to bottom, #e3e3e3, #bdbdbd);
+    -fx-background-radius: 5;
+    -fx-border-radius: 5;
+    -fx-font-weight: bold;
 }
