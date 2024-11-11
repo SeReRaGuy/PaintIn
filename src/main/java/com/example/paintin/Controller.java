@@ -37,6 +37,8 @@ public class Controller {
     @FXML
     private Slider thresholdSlider;
     @FXML
+    private Slider maskSizeSlider;
+    @FXML
     private CheckBox onOriginalCheck;
     @FXML
     private Button saveButton;
@@ -48,9 +50,12 @@ public class Controller {
     private RadioButton laplasianOrigRadio;
     @FXML
     private Button histogramButton;
+    @FXML
+    private TextField maskSizeText;
     private Image selectedImage;
     private Image outputImage;
     private FileChooser chooser = new FileChooser();
+    private int maskSize = 3;
     private double[][] inhomogeneousAveragingFilter = {
             {1 / 16.0, 2 / 16.0, 1 / 16.0},
             {2 / 16.0, 4 / 16.0, 2 / 16.0},
@@ -90,6 +95,10 @@ public class Controller {
         imageSlider.setMin(-20);
         imageSlider.setMax(100);
 
+        maskSizeSlider.setMin(1);
+        maskSizeSlider.setMax(5);
+        maskSizeSlider.setBlockIncrement(1);
+
         laplasianRadio.setToggleGroup(laplasianToggleGroup);
         laplasianOrigRadio.setToggleGroup(laplasianToggleGroup);
 
@@ -103,6 +112,8 @@ public class Controller {
                     laplasianOrigRadio.setVisible(false);
                     thresholdSlider.setVisible(false);
                     thresholdText.setVisible(false);
+                    maskSizeSlider.setVisible(false);
+                    maskSizeText.setVisible(false);
 
                     if (newValue.equals("Гамма-коррекция")) {
                         gammaSlider.setVisible(true);
@@ -118,6 +129,11 @@ public class Controller {
                         thresholdSlider.setVisible(true);
                         thresholdText.setVisible(true);
                     }
+                    if (newValue.equals("Однородный усредняющий фильтр") || newValue.equals("Медианный фильтр") || newValue.equals("Фильтр максимума") || newValue.equals("Фильтр минимума") || newValue.equals("Фильтр срединной точки") || newValue.equals("Дилатация") || newValue.equals("Эрозия") || newValue.equals("Замыкание") || newValue.equals("Размыкание") || newValue.equals("Выделение границ"))
+                    {
+                        maskSizeSlider.setVisible(true);
+                        maskSizeText.setVisible(true);
+                    }
                 }
             }
         });
@@ -131,7 +147,6 @@ public class Controller {
                     helpText.setText(String.valueOf(gammaSlider.getValue()));
                     gammaText.setText(String.valueOf(gammaSlider.getValue()));
                 }
-
             }
         });
 
@@ -153,6 +168,15 @@ public class Controller {
                     applyThresholdFilter(thresholdSlider.getValue());
                     helpText.setText(String.valueOf(thresholdSlider.getValue()));
                 }
+            }
+        });
+
+        maskSizeSlider.valueProperty().addListener(new ChangeListener<Number>() {
+            @Override
+            public void changed(ObservableValue<? extends Number> observableValue, Number number, Number t1) {
+                maskSize = (int) maskSizeSlider.getValue();
+                maskSizeText.setText("Текущий размер маски : " + maskSize);
+                helpText.setText("maskSize = " + maskSize);
             }
         });
     }
@@ -197,8 +221,7 @@ public class Controller {
     }
 
     @FXML
-    public void onSwapImages()
-    {
+    public void onSwapImages() {
         Image bufferImage;
         bufferImage = selectedImage;
         selectedImage = outputImage;
@@ -223,23 +246,23 @@ public class Controller {
                     applyThresholdFilter(Double.parseDouble(thresholdText.getText()));
                 else if (selectedEffect.equals("Пороговый фильтр методом Оцу")) applyOtsuThresholdFilter();
                 else if (selectedEffect.equals("Однородный усредняющий фильтр"))
-                    applyHomogeneousAveragingFilter(5); //Если нужно - организовать выбор размера
+                    applyHomogeneousAveragingFilter(maskSize);
                 else if (selectedEffect.equals("Неоднородный усредняющий фильтр"))
-                    applyInhomogeneousAveragingFilter(inhomogeneousAveragingFilter); //Если нужно - организовать выбор размера
+                    applyInhomogeneousAveragingFilter(inhomogeneousAveragingFilter);
                 else if (selectedEffect.equals("Медианный фильтр"))
-                    applyMedianFilter(5); //Если нужно - организовать выбор размера
+                    applyMedianFilter(maskSize);
                 else if (selectedEffect.equals("Фильтр максимума"))
-                    applyMaxFilter(3); //Если нужно - организовать выбор размера
+                    applyMaxFilter(maskSize);
                 else if (selectedEffect.equals("Фильтр минимума"))
-                    applyMinFilter(3); //Если нужно - организовать выбор размера
+                    applyMinFilter(maskSize);
                 else if (selectedEffect.equals("Фильтр срединной точки"))
-                    applyMidpointFilter(3); //Если нужно - организовать выбор размера
-                else if (selectedEffect.equals("Дилатация")) applyDilation(3); //Если нужно - организовать выбор размера
-                else if (selectedEffect.equals("Эрозия")) applyErosion(3); //Если нужно - организовать выбор размера
-                else if (selectedEffect.equals("Замыкание")) applyClosing(3); //Если нужно - организовать выбор размера
-                else if (selectedEffect.equals("Размыкание")) applyOpening(3); //Если нужно - организовать выбор размера
+                    applyMidpointFilter(maskSize);
+                else if (selectedEffect.equals("Дилатация")) applyDilation(maskSize);
+                else if (selectedEffect.equals("Эрозия")) applyErosion(maskSize);
+                else if (selectedEffect.equals("Замыкание")) applyClosing(maskSize);
+                else if (selectedEffect.equals("Размыкание")) applyOpening(maskSize);
                 else if (selectedEffect.equals("Выделение границ"))
-                    applyEdgeDetection(3); //Если нужно - организовать выбор размера
+                    applyEdgeDetection(maskSize);
                 else if (selectedEffect.equals("Остов"))
                     applySkeletonization(); //Если нужно - организовать выбор размера
             }
@@ -995,7 +1018,7 @@ public class Controller {
         PixelReader pixelReader = selectedImage.getPixelReader();
         PixelWriter pixelWriter = dilatationFilterImage.getPixelWriter();
 
-        performDilation(filterSize, pixelReader, pixelWriter);
+        performErosion(filterSize, pixelReader, pixelWriter);
 
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(dilatationFilterImage);
@@ -1016,7 +1039,7 @@ public class Controller {
         PixelReader pixelReader = selectedImage.getPixelReader();
         PixelWriter pixelWriter = erosionFilterImage.getPixelWriter();
 
-        performErosion(filterSize, pixelReader, pixelWriter);
+        performDilation(filterSize, pixelReader, pixelWriter);
 
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(erosionFilterImage);
@@ -1038,11 +1061,11 @@ public class Controller {
         PixelReader pixelReader = selectedImage.getPixelReader();
         PixelWriter dilatedWriter = dilatedImage.getPixelWriter();
 
-        performDilation(filterSize, pixelReader, dilatedWriter);
+        performErosion(filterSize, pixelReader, dilatedWriter);
 
         PixelReader dilatedReader = dilatedImage.getPixelReader();
         PixelWriter closingWriter = closingImage.getPixelWriter();
-        performErosion(filterSize, dilatedReader, closingWriter);
+        performDilation(filterSize, dilatedReader, closingWriter);
 
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(closingImage);
@@ -1064,13 +1087,13 @@ public class Controller {
         PixelWriter erodedWriter = erodedImage.getPixelWriter();
 
         // Шаг 1: Выполняем эрозию
-        performErosion(filterSize, pixelReader, erodedWriter);
+        performDilation(filterSize, pixelReader, erodedWriter);
 
         // Шаг 2: Выполняем дилатацию на эрозированном изображении и записываем результат в openedImage
         WritableImage openedImage = new WritableImage(width, height); // Результирующее изображение
         PixelReader erodedReader = erodedImage.getPixelReader();
         PixelWriter openingWriter = openedImage.getPixelWriter();
-        performDilation(filterSize, erodedReader, openingWriter);
+        performErosion(filterSize, erodedReader, openingWriter);
 
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(openedImage);
@@ -1091,10 +1114,10 @@ public class Controller {
         PixelReader pixelReader = selectedImage.getPixelReader();
         PixelWriter erodedWriter = erodedImage.getPixelWriter();
 
-        // Шаг 1: Выполняем эрозию на исходном изображении
+        // Выполняем эрозию на исходном изображении
         performErosion(filterSize, pixelReader, erodedWriter);
 
-        // Шаг 2: Вычисляем разницу между исходным изображением и эрозированным
+        // Вычисляем разницу между исходным изображением и эрозированным
         WritableImage edgeImage = new WritableImage(width, height);
         PixelReader erodedReader = erodedImage.getPixelReader();
         PixelWriter edgeWriter = edgeImage.getPixelWriter();
@@ -1243,7 +1266,7 @@ public class Controller {
         }
     }
 
-    private void performDilation(int filterSize, PixelReader reader, PixelWriter writer) {
+    private void performErosion(int filterSize, PixelReader reader, PixelWriter writer) {
         int width = (int) selectedImage.getWidth();
         int height = (int) selectedImage.getHeight();
         int radius = filterSize / 2;
@@ -1273,7 +1296,7 @@ public class Controller {
         }
     }
 
-    private void performErosion(int filterSize, PixelReader reader, PixelWriter writer) {
+    private void performDilation(int filterSize, PixelReader reader, PixelWriter writer) {
         int width = (int) selectedImage.getWidth();
         int height = (int) selectedImage.getHeight();
         int radius = filterSize / 2;

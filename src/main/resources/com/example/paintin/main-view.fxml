@@ -49,5 +49,7 @@
       <CheckBox fx:id="onOriginalCheck" layoutX="65.0" layoutY="646.0" mnemonicParsing="false" text="Заменить оригинальное изображение" />
       <Button fx:id="saveButton" layoutX="14.0" layoutY="673.0" mnemonicParsing="false" onMouseClicked="#onSaveImage" prefHeight="36.0" prefWidth="335.0" text="Сохранить изображение" />
       <Button fx:id="swapButton" layoutX="363.0" layoutY="673.0" mnemonicParsing="false" onMouseClicked="#onSwapImages" prefHeight="36.0" prefWidth="335.0" text="Поменять картинки местами" />
+      <Slider fx:id="maskSizeSlider" layoutX="360.0" layoutY="648.0" prefHeight="14.0" prefWidth="335.0" visible="false" />
+      <TextField fx:id="maskSizeText" editable="false" layoutX="363.0" layoutY="621.0" prefHeight="25.0" prefWidth="335.0" promptText="Измените значение маски" visible="false" />
    </children>
 </AnchorPane>
