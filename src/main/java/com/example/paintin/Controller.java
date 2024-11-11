@@ -197,6 +197,17 @@ public class Controller {
     }
 
     @FXML
+    public void onSwapImages()
+    {
+        Image bufferImage;
+        bufferImage = selectedImage;
+        selectedImage = outputImage;
+        outputImage = bufferImage;
+        imageViewIn.setImage(selectedImage);
+        imageViewOut.setImage(outputImage);
+    }
+
+    @FXML
     public void onApplyEffect() {
         if (selectedImage != null) {
             String selectedEffect = effectComboBox.getValue();

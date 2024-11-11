@@ -48,5 +48,6 @@
       <TextField fx:id="thresholdText" layoutX="370.0" layoutY="572.0" prefHeight="25.0" prefWidth="200.0" promptText="Изменить y - гамма" visible="false" />
       <CheckBox fx:id="onOriginalCheck" layoutX="65.0" layoutY="646.0" mnemonicParsing="false" text="Заменить оригинальное изображение" />
       <Button fx:id="saveButton" layoutX="14.0" layoutY="673.0" mnemonicParsing="false" onMouseClicked="#onSaveImage" prefHeight="36.0" prefWidth="335.0" text="Сохранить изображение" />
+      <Button fx:id="swapButton" layoutX="363.0" layoutY="673.0" mnemonicParsing="false" onMouseClicked="#onSwapImages" prefHeight="36.0" prefWidth="335.0" text="Поменять картинки местами" />
    </children>
 </AnchorPane>
