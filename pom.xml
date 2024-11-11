@@ -38,6 +38,18 @@
             <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
+
+
+
+        <!-- JavaFX Swing (для SwingFXUtils) -->
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-swing</artifactId>
+            <version>20-ea+4</version>
+        </dependency>
+
+
+
     </dependencies>
 
     <build>

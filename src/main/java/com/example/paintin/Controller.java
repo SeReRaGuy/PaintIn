@@ -7,6 +7,10 @@ import javafx.scene.control.*;
 import javafx.scene.image.*;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
+import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
+import java.io.IOException;
+import javafx.embed.swing.SwingFXUtils;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -45,6 +49,7 @@ public class Controller {
     @FXML
     private Button histogramButton;
     private Image selectedImage;
+    private Image outputImage;
     private FileChooser chooser = new FileChooser();
     private double[][] inhomogeneousAveragingFilter = {
             {1 / 16.0, 2 / 16.0, 1 / 16.0},
@@ -165,6 +170,33 @@ public class Controller {
     }
 
     @FXML
+    public void onSaveImage() {
+        // Создаем диалоговое окно для выбора места сохранения файла
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Сохранить изображение");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PNG Image", "*.png"));
+
+        // Открываем диалоговое окно и получаем выбранный файл
+        File file = fileChooser.showSaveDialog(null);
+
+        if (file != null) {
+            // Проверяем, имеет ли файл расширение .png, и добавляем его, если отсутствует
+            if (!file.getName().toLowerCase().endsWith(".png")) {
+                file = new File(file.getAbsolutePath() + ".png");
+            }
+
+            // Преобразуем изображение из JavaFX в BufferedImage и сохраняем его
+            BufferedImage bufferedImage = SwingFXUtils.fromFXImage(outputImage, null);
+            try {
+                ImageIO.write(bufferedImage, "png", file);
+                System.out.println("Изображение сохранено: " + file.getAbsolutePath());
+            } catch (IOException e) {
+                System.err.println("Ошибка сохранения изображения: " + e.getMessage());
+            }
+        }
+    }
+
+    @FXML
     public void onApplyEffect() {
         if (selectedImage != null) {
             String selectedEffect = effectComboBox.getValue();
@@ -184,7 +216,7 @@ public class Controller {
                 else if (selectedEffect.equals("Неоднородный усредняющий фильтр"))
                     applyInhomogeneousAveragingFilter(inhomogeneousAveragingFilter); //Если нужно - организовать выбор размера
                 else if (selectedEffect.equals("Медианный фильтр"))
-                    applyMedianFilter(3); //Если нужно - организовать выбор размера
+                    applyMedianFilter(5); //Если нужно - организовать выбор размера
                 else if (selectedEffect.equals("Фильтр максимума"))
                     applyMaxFilter(3); //Если нужно - организовать выбор размера
                 else if (selectedEffect.equals("Фильтр минимума"))
@@ -223,7 +255,11 @@ public class Controller {
             if (onOriginalCheck.isSelected()) {
                 imageViewIn.setImage(negativeImage);
                 selectedImage = negativeImage;
-            } else imageViewOut.setImage(negativeImage);
+            } else
+            {
+                imageViewOut.setImage(negativeImage);
+                outputImage = negativeImage;
+            }
 
         }
     }
@@ -247,7 +283,11 @@ public class Controller {
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(gammaImage);
             selectedImage = gammaImage;
-        } else imageViewOut.setImage(gammaImage);
+        } else
+        {
+            imageViewOut.setImage(gammaImage);
+            outputImage = gammaImage;
+        }
     }
 
     private void applyRobertsOperator() {
@@ -296,7 +336,11 @@ public class Controller {
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(robertsImage);
             selectedImage = robertsImage;
-        } else imageViewOut.setImage(robertsImage);
+        } else
+        {
+            imageViewOut.setImage(robertsImage);
+            outputImage = robertsImage;
+        }
     }
 
     private void applySobelOperator() {
@@ -355,7 +399,11 @@ public class Controller {
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(sobelImage);
             selectedImage = sobelImage;
-        } else imageViewOut.setImage(sobelImage);
+        } else
+        {
+            imageViewOut.setImage(sobelImage);
+            outputImage = sobelImage;
+        }
     }
 
     private void applyLaplacianOperator() {
@@ -434,7 +482,11 @@ public class Controller {
             if (onOriginalCheck.isSelected()) {
                 imageViewIn.setImage(combinedImage);
                 selectedImage = combinedImage;
-            } else imageViewOut.setImage(combinedImage);
+            } else
+            {
+                imageViewOut.setImage(combinedImage);
+                outputImage = combinedImage;
+            }
         }
     }
 
@@ -491,7 +543,11 @@ public class Controller {
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(equalizedImage);
             selectedImage = equalizedImage;
-        } else imageViewOut.setImage(equalizedImage);
+        } else
+        {
+            imageViewOut.setImage(equalizedImage);
+            outputImage = equalizedImage;
+        }
     }
 
     public void applyThresholdFilter(double threshold) {
@@ -521,7 +577,11 @@ public class Controller {
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(thresholdImage);
             selectedImage = thresholdImage;
-        } else imageViewOut.setImage(thresholdImage);
+        } else
+        {
+            imageViewOut.setImage(thresholdImage);
+            outputImage = thresholdImage;
+        }
     }
 
     public void applyOtsuThresholdFilter() {
@@ -590,7 +650,11 @@ public class Controller {
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(OtsuThresholdImage);
             selectedImage = OtsuThresholdImage;
-        } else imageViewOut.setImage(OtsuThresholdImage);
+        } else
+        {
+            imageViewOut.setImage(OtsuThresholdImage);
+            outputImage = OtsuThresholdImage;
+        }
     }
 
     private void applyHomogeneousAveragingFilter(int filterSize) {
@@ -640,7 +704,11 @@ public class Controller {
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(homogeneousAveragingImage);
             selectedImage = homogeneousAveragingImage;
-        } else imageViewOut.setImage(homogeneousAveragingImage);
+        } else
+        {
+            imageViewOut.setImage(homogeneousAveragingImage);
+            outputImage = homogeneousAveragingImage;
+        }
     }
 
     private void applyInhomogeneousAveragingFilter(double[][] kernel) {
@@ -693,7 +761,11 @@ public class Controller {
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(inhomogeneousAveragingImage);
             selectedImage = inhomogeneousAveragingImage;
-        } else imageViewOut.setImage(inhomogeneousAveragingImage);
+        } else
+        {
+            imageViewOut.setImage(inhomogeneousAveragingImage);
+            outputImage = inhomogeneousAveragingImage;
+        }
     }
 
     private void applyMedianFilter(int filterSize) {
@@ -743,7 +815,11 @@ public class Controller {
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(medianFilterImage);
             selectedImage = medianFilterImage;
-        } else imageViewOut.setImage(medianFilterImage);
+        } else
+        {
+            imageViewOut.setImage(medianFilterImage);
+            outputImage = medianFilterImage;
+        }
     }
 
     private void applyMaxFilter(int filterSize) {
@@ -787,7 +863,11 @@ public class Controller {
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(maxFilterImage);
             selectedImage = maxFilterImage;
-        } else imageViewOut.setImage(maxFilterImage);
+        } else
+        {
+            imageViewOut.setImage(maxFilterImage);
+            outputImage = maxFilterImage;
+        }
     }
 
     private void applyMinFilter(int filterSize) {
@@ -830,7 +910,11 @@ public class Controller {
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(minFilterImage);
             selectedImage = minFilterImage;
-        } else imageViewOut.setImage(minFilterImage);
+        } else
+        {
+            imageViewOut.setImage(minFilterImage);
+            outputImage = minFilterImage;
+        }
     }
 
     private void applyMidpointFilter(int filterSize) {
@@ -884,7 +968,11 @@ public class Controller {
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(midpointFilterImage);
             selectedImage = midpointFilterImage;
-        } else imageViewOut.setImage(midpointFilterImage);
+        } else
+        {
+            imageViewOut.setImage(midpointFilterImage);
+            outputImage = midpointFilterImage;
+        }
     }
 
     private void applyDilation(int filterSize) {
@@ -901,7 +989,11 @@ public class Controller {
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(dilatationFilterImage);
             selectedImage = dilatationFilterImage;
-        } else imageViewOut.setImage(dilatationFilterImage);
+        } else
+        {
+            imageViewOut.setImage(dilatationFilterImage);
+            outputImage = dilatationFilterImage;
+        }
     }
 
     private void applyErosion(int filterSize) {
@@ -918,7 +1010,11 @@ public class Controller {
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(erosionFilterImage);
             selectedImage = erosionFilterImage;
-        } else imageViewOut.setImage(erosionFilterImage);
+        } else
+        {
+            imageViewOut.setImage(erosionFilterImage);
+            outputImage = erosionFilterImage;
+        }
     }
 
     private void applyClosing(int filterSize) {
@@ -940,7 +1036,11 @@ public class Controller {
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(closingImage);
             selectedImage = closingImage;
-        } else imageViewOut.setImage(closingImage);
+        } else
+        {
+            imageViewOut.setImage(closingImage);
+            outputImage = closingImage;
+        }
     }
 
     private void applyOpening(int filterSize) {
@@ -964,7 +1064,11 @@ public class Controller {
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(openedImage);
             selectedImage = openedImage;
-        } else imageViewOut.setImage(openedImage);
+        } else
+        {
+            imageViewOut.setImage(openedImage);
+            outputImage = openedImage;
+        }
     }
 
     private void applyEdgeDetection(int filterSize) {
@@ -1002,7 +1106,11 @@ public class Controller {
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(edgeImage);
             selectedImage = edgeImage;
-        } else imageViewOut.setImage(edgeImage);
+        } else
+        {
+            imageViewOut.setImage(edgeImage);
+            outputImage = edgeImage;
+        }
     }
 
     public void applySkeletonization() {
@@ -1079,7 +1187,11 @@ public class Controller {
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(skeletonImage);
             selectedImage = skeletonImage;
-        } else imageViewOut.setImage(skeletonImage);
+        } else
+        {
+            imageViewOut.setImage(skeletonImage);
+            outputImage = skeletonImage;
+        }
     }
 
 
