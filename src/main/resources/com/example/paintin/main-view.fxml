@@ -40,6 +40,8 @@
       <TextField fx:id="moveImageField" editable="false" layoutX="938.0" layoutY="618.0" prefHeight="25.0" prefWidth="200.0" promptText="Сместить изображение" stylesheets="@style.css" />
       <RadioButton fx:id="laplasianRadio" layoutX="360.0" layoutY="600.0" mnemonicParsing="false" text="Лапласиан" visible="false" />
       <RadioButton fx:id="laplasianOrigRadio" layoutX="360.0" layoutY="621.0" mnemonicParsing="false" text="Лапласиан + изображение" visible="false" />
+      <RadioButton fx:id="whiteRadio" layoutX="360.0" layoutY="600.0" mnemonicParsing="false" text="Объект светлый" visible="false" />
+      <RadioButton fx:id="blackRadio" layoutX="360.0" layoutY="621.0" mnemonicParsing="false" text="Объект тёмный" visible="false" />
       <Button fx:id="histogramButton" layoutX="14.0" layoutY="667.0" mnemonicParsing="false" onMouseClicked="#onShowHistogram" prefHeight="25.0" prefWidth="335.0" text="Гистограмма изображения" />
       <Slider fx:id="thresholdSlider" layoutX="370.0" layoutY="612.0" prefHeight="14.0" prefWidth="200.0" visible="false" />
       <TextField fx:id="thresholdText" layoutX="370.0" layoutY="631.0" prefHeight="25.0" prefWidth="200.0" promptText="Изменить y - гамма" stylesheets="@style.css" visible="false" />

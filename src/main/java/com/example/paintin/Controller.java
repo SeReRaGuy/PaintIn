@@ -21,6 +21,7 @@ import java.util.List;
 
 public class Controller {
     ToggleGroup laplasianToggleGroup = new ToggleGroup();
+    ToggleGroup WBToggleGroup = new ToggleGroup();
     @FXML
     private ImageView imageViewIn;
     @FXML
@@ -47,6 +48,14 @@ public class Controller {
     private RadioButton laplasianRadio;
     @FXML
     private RadioButton laplasianOrigRadio;
+    @FXML
+    private RadioButton whiteRadio;
+    @FXML
+    private RadioButton blackRadio;
+    @FXML
+    private RadioButton dilationWhiteRadio;
+    @FXML
+    private RadioButton dilationBlackRadio;
     @FXML
     private Button histogramButton;
     @FXML
@@ -101,11 +110,14 @@ public class Controller {
         imageSlider.setMax(100);
 
         maskSizeSlider.setMin(1);
-        maskSizeSlider.setMax(5);
+        maskSizeSlider.setMax(6);
         maskSizeSlider.setBlockIncrement(1);
 
         laplasianRadio.setToggleGroup(laplasianToggleGroup);
         laplasianOrigRadio.setToggleGroup(laplasianToggleGroup);
+
+        whiteRadio.setToggleGroup(WBToggleGroup);
+        blackRadio.setToggleGroup(WBToggleGroup);
 
         effectComboBox.valueProperty().addListener(new ChangeListener<String>() {
             @Override
@@ -115,6 +127,8 @@ public class Controller {
                     gammaText.setVisible(false);
                     laplasianRadio.setVisible(false);
                     laplasianOrigRadio.setVisible(false);
+                    whiteRadio.setVisible(false);
+                    blackRadio.setVisible(false);
                     thresholdSlider.setVisible(false);
                     thresholdText.setVisible(false);
                     maskSizeSlider.setVisible(false);
@@ -134,9 +148,16 @@ public class Controller {
                         thresholdSlider.setVisible(true);
                         thresholdText.setVisible(true);
                     }
+
                     if (newValue.equals("Однородный усредняющий фильтр") || newValue.equals("Медианный фильтр") || newValue.equals("Фильтр максимума") || newValue.equals("Фильтр минимума") || newValue.equals("Фильтр срединной точки") || newValue.equals("Дилатация") || newValue.equals("Эрозия") || newValue.equals("Замыкание") || newValue.equals("Размыкание") || newValue.equals("Выделение границ")) {
                         maskSizeSlider.setVisible(true);
                         maskSizeText.setVisible(true);
+                    }
+
+                    if (newValue.equals("Эрозия") || newValue.equals("Дилатация") || newValue.equals("Замыкание") || newValue.equals("Размыкание") || newValue.equals("Выделение границ"))
+                    {
+                        whiteRadio.setVisible(true);
+                        blackRadio.setVisible(true);
                     }
                 }
             }
@@ -1073,7 +1094,16 @@ public class Controller {
         PixelReader pixelReader = selectedImage.getPixelReader();
         PixelWriter pixelWriter = dilatationFilterImage.getPixelWriter();
 
-        performErosion(filterSize, pixelReader, pixelWriter);
+        if (whiteRadio.isSelected()) performDilation(filterSize, pixelReader, pixelWriter, true);
+        else if (blackRadio.isSelected()) performDilation(filterSize, pixelReader, pixelWriter, false);
+        else {
+            Alert alert = new Alert(AlertType.ERROR);
+            alert.setTitle("Ошибка");
+            alert.setHeaderText("Не выбран ни один вариант");
+            alert.setContentText("Пожалуйста, выберите цвет объекта.");
+
+            alert.showAndWait();
+        }
 
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(dilatationFilterImage);
@@ -1093,7 +1123,16 @@ public class Controller {
         PixelReader pixelReader = selectedImage.getPixelReader();
         PixelWriter pixelWriter = erosionFilterImage.getPixelWriter();
 
-        performDilation(filterSize, pixelReader, pixelWriter);
+        if (whiteRadio.isSelected()) performErosion(filterSize, pixelReader, pixelWriter, true);
+        else if (blackRadio.isSelected()) performErosion(filterSize, pixelReader, pixelWriter, false);
+        else {
+            Alert alert = new Alert(AlertType.ERROR);
+            alert.setTitle("Ошибка");
+            alert.setHeaderText("Не выбран ни один вариант");
+            alert.setContentText("Пожалуйста, выберите цвет объекта.");
+
+            alert.showAndWait();
+        }
 
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(erosionFilterImage);
@@ -1114,11 +1153,31 @@ public class Controller {
         PixelReader pixelReader = selectedImage.getPixelReader();
         PixelWriter dilatedWriter = dilatedImage.getPixelWriter();
 
-        performErosion(filterSize, pixelReader, dilatedWriter);
+        if (whiteRadio.isSelected()) performDilation(filterSize, pixelReader, dilatedWriter, true);
+        else if (blackRadio.isSelected()) performDilation(filterSize, pixelReader, dilatedWriter, false);
+        else {
+            Alert alert = new Alert(AlertType.ERROR);
+            alert.setTitle("Ошибка");
+            alert.setHeaderText("Не выбран ни один вариант");
+            alert.setContentText("Пожалуйста, выберите цвет объекта.");
+
+            alert.showAndWait();
+            return;
+        }
 
         PixelReader dilatedReader = dilatedImage.getPixelReader();
         PixelWriter closingWriter = closingImage.getPixelWriter();
-        performDilation(filterSize, dilatedReader, closingWriter);
+
+        if (whiteRadio.isSelected()) performErosion(filterSize, dilatedReader, closingWriter, true);
+        else if (blackRadio.isSelected()) performErosion(filterSize, dilatedReader, closingWriter, false);
+        else {
+            Alert alert = new Alert(AlertType.ERROR);
+            alert.setTitle("Ошибка");
+            alert.setHeaderText("Не выбран ни один вариант");
+            alert.setContentText("Пожалуйста, выберите цвет объекта.");
+
+            alert.showAndWait();
+        }
 
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(closingImage);
@@ -1135,17 +1194,37 @@ public class Controller {
 
         // Промежуточное изображение для эрозии
         WritableImage erodedImage = new WritableImage(width, height);
+        WritableImage openedImage = new WritableImage(width, height);
+
         PixelReader pixelReader = selectedImage.getPixelReader();
         PixelWriter erodedWriter = erodedImage.getPixelWriter();
 
-        // Шаг 1: Выполняем эрозию
-        performDilation(filterSize, pixelReader, erodedWriter);
+        if (whiteRadio.isSelected()) performErosion(filterSize, pixelReader, erodedWriter, true);
+        else if (blackRadio.isSelected()) performErosion(filterSize, pixelReader, erodedWriter, false);
+        else {
+            Alert alert = new Alert(AlertType.ERROR);
+            alert.setTitle("Ошибка");
+            alert.setHeaderText("Не выбран ни один вариант");
+            alert.setContentText("Пожалуйста, выберите цвет объекта.");
+
+            alert.showAndWait();
+            return;
+        }
 
         // Шаг 2: Выполняем дилатацию на эрозированном изображении и записываем результат в openedImage
-        WritableImage openedImage = new WritableImage(width, height); // Результирующее изображение
         PixelReader erodedReader = erodedImage.getPixelReader();
         PixelWriter openingWriter = openedImage.getPixelWriter();
-        performErosion(filterSize, erodedReader, openingWriter);
+
+        if (whiteRadio.isSelected()) performDilation(filterSize, erodedReader, openingWriter, true);
+        else if (blackRadio.isSelected()) performDilation(filterSize, erodedReader, openingWriter, false);
+        else {
+            Alert alert = new Alert(AlertType.ERROR);
+            alert.setTitle("Ошибка");
+            alert.setHeaderText("Не выбран ни один вариант");
+            alert.setContentText("Пожалуйста, выберите цвет объекта.");
+
+            alert.showAndWait();
+        }
 
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(openedImage);
@@ -1160,34 +1239,55 @@ public class Controller {
         int width = (int) selectedImage.getWidth();
         int height = (int) selectedImage.getHeight();
 
-        // Промежуточное изображение для эрозии
         WritableImage erodedImage = new WritableImage(width, height);
         PixelReader pixelReader = selectedImage.getPixelReader();
         PixelWriter erodedWriter = erodedImage.getPixelWriter();
 
         // Выполняем эрозию на исходном изображении
-        performErosion(filterSize, pixelReader, erodedWriter);
+        boolean isObjectWhite;
+        if (whiteRadio.isSelected()) {
+            isObjectWhite = true;
+            performErosion(filterSize, pixelReader, erodedWriter, true);
+        } else if (blackRadio.isSelected()) {
+            isObjectWhite = false;
+            performErosion(filterSize, pixelReader, erodedWriter, false);
+        } else {
+            Alert alert = new Alert(AlertType.ERROR);
+            alert.setTitle("Ошибка");
+            alert.setHeaderText("Не выбран ни один вариант");
+            alert.setContentText("Пожалуйста, выберите цвет объекта.");
+            alert.showAndWait();
+            return;
+        }
 
-        // Вычисляем разницу между исходным изображением и эрозированным
+        // Вычисляем разницу между оригиналом и эрозированным изображением, с учетом цвета объекта
         WritableImage edgeImage = new WritableImage(width, height);
         PixelReader erodedReader = erodedImage.getPixelReader();
         PixelWriter edgeWriter = edgeImage.getPixelWriter();
 
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                // Получаем исходный цвет и эрозированный цвет
                 Color originalColor = pixelReader.getColor(x, y);
                 Color erodedColor = erodedReader.getColor(x, y);
 
-                // Вычисляем разницу, которая является границей
-                double red = Math.max(0, originalColor.getRed() - erodedColor.getRed());
-                double green = Math.max(0, originalColor.getGreen() - erodedColor.getGreen());
-                double blue = Math.max(0, originalColor.getBlue() - erodedColor.getBlue());
+                // Для светлого объекта: original - eroded (выделяет светлые границы)
+                // Для тёмного объекта: eroded - original (выделяет тёмные границы)
+                double red, green, blue;
+                if (isObjectWhite) {
+                    red = Math.max(0, originalColor.getRed() - erodedColor.getRed());
+                    green = Math.max(0, originalColor.getGreen() - erodedColor.getGreen());
+                    blue = Math.max(0, originalColor.getBlue() - erodedColor.getBlue());
+                } else {
+                    red = Math.max(0, erodedColor.getRed() - originalColor.getRed());
+                    green = Math.max(0, erodedColor.getGreen() - originalColor.getGreen());
+                    blue = Math.max(0, erodedColor.getBlue() - originalColor.getBlue());
+                }
 
                 Color edgeColor = new Color(red, green, blue, 1.0);
                 edgeWriter.setColor(x, y, edgeColor);
             }
         }
+
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(edgeImage);
             selectedImage = edgeImage;
@@ -1315,62 +1415,63 @@ public class Controller {
         }
     }
 
-    private void performErosion(int filterSize, PixelReader reader, PixelWriter writer) {
+    private void performErosion(int filterSize, PixelReader reader, PixelWriter writer, boolean isObjectWhite) {
         int width = (int) selectedImage.getWidth();
         int height = (int) selectedImage.getHeight();
         int radius = filterSize / 2;
 
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                int minRed = 255, minGreen = 255, minBlue = 255;
+                double extremeValue = isObjectWhite ? 1.0 : 0.0;
 
-                for (int dy = -radius; dy <= radius; dy++) {
-                    for (int dx = -radius; dx <= radius; dx++) {
-                        int nx = x + dx;
-                        int ny = y + dy;
+                for (int j = -radius; j <= radius; j++) {
+                    for (int i = -radius; i <= radius; i++) {
+                        // Позиция соседнего пикселя
+                        int nx = Math.min(width - 1, Math.max(0, x + i));
+                        int ny = Math.min(height - 1, Math.max(0, y + j));
 
-                        if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-                            Color color = reader.getColor(nx, ny);
+                        Color color = reader.getColor(nx, ny);
+                        double gray = color.getRed() * 0.2989 + color.getGreen() * 0.5870 + color.getBlue() * 0.1140;
 
-                            minRed = Math.min(minRed, (int) (color.getRed() * 255));
-                            minGreen = Math.min(minGreen, (int) (color.getGreen() * 255));
-                            minBlue = Math.min(minBlue, (int) (color.getBlue() * 255));
+                        if (isObjectWhite) {
+                            extremeValue = Math.min(extremeValue, gray);
+                        } else {
+                            extremeValue = Math.max(extremeValue, gray);
                         }
                     }
                 }
-
-                Color minColor = Color.rgb(minRed, minGreen, minBlue);
-                writer.setColor(x, y, minColor);
+                Color newColor = Color.gray(extremeValue);
+                writer.setColor(x, y, newColor);
             }
         }
     }
 
-    private void performDilation(int filterSize, PixelReader reader, PixelWriter writer) {
+    private void performDilation(int filterSize, PixelReader reader, PixelWriter writer, boolean isObjectWhite) {
         int width = (int) selectedImage.getWidth();
         int height = (int) selectedImage.getHeight();
         int radius = filterSize / 2;
 
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                int maxRed = 0, maxGreen = 0, maxBlue = 0;
+                double extremeValue = isObjectWhite ? 0.0 : 1.0;
 
-                for (int dy = -radius; dy <= radius; dy++) {
-                    for (int dx = -radius; dx <= radius; dx++) {
-                        int nx = x + dx;
-                        int ny = y + dy;
+                for (int j = -radius; j <= radius; j++) {
+                    for (int i = -radius; i <= radius; i++) {
+                        int nx = Math.min(width - 1, Math.max(0, x + i));
+                        int ny = Math.min(height - 1, Math.max(0, y + j));
 
-                        if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-                            Color color = reader.getColor(nx, ny);
+                        Color color = reader.getColor(nx, ny);
+                        double gray = color.getRed() * 0.2989 + color.getGreen() * 0.5870 + color.getBlue() * 0.1140;
 
-                            maxRed = Math.max(maxRed, (int) (color.getRed() * 255));
-                            maxGreen = Math.max(maxGreen, (int) (color.getGreen() * 255));
-                            maxBlue = Math.max(maxBlue, (int) (color.getBlue() * 255));
+                        if (isObjectWhite) {
+                            extremeValue = Math.max(extremeValue, gray);
+                        } else {
+                            extremeValue = Math.min(extremeValue, gray);
                         }
                     }
                 }
-
-                Color maxColor = Color.rgb(maxRed, maxGreen, maxBlue);
-                writer.setColor(x, y, maxColor);
+                Color newColor = Color.gray(extremeValue);
+                writer.setColor(x, y, newColor);
             }
         }
     }
