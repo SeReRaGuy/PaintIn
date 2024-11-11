@@ -154,7 +154,7 @@ public class Controller {
                         maskSizeText.setVisible(true);
                     }
 
-                    if (newValue.equals("Эрозия") || newValue.equals("Дилатация") || newValue.equals("Замыкание") || newValue.equals("Размыкание") || newValue.equals("Выделение границ"))
+                    if (newValue.equals("Эрозия") || newValue.equals("Дилатация") || newValue.equals("Замыкание") || newValue.equals("Размыкание") || newValue.equals("Выделение границ") || newValue.equals("Остов"))
                     {
                         whiteRadio.setVisible(true);
                         blackRadio.setVisible(true);
@@ -1305,6 +1305,20 @@ public class Controller {
         WritableImage skeletonImage = new WritableImage(width, height);
         PixelWriter pixelWriter = skeletonImage.getPixelWriter();
 
+        boolean isObjectWhite;
+        if (whiteRadio.isSelected()) {
+            isObjectWhite = true;
+        } else if (blackRadio.isSelected()) {
+            isObjectWhite = false;
+        } else {
+            Alert alert = new Alert(AlertType.ERROR);
+            alert.setTitle("Ошибка");
+            alert.setHeaderText("Не выбран ни один вариант");
+            alert.setContentText("Пожалуйста, выберите цвет объекта.");
+            alert.showAndWait();
+            return;
+        }
+
         // Копируем изображение в writableImage
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
@@ -1319,6 +1333,15 @@ public class Controller {
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 binaryData[x][y] = (pixelReader.getArgb(x, y) & 0xFFFFFF) == 0xFFFFFF;
+            }
+        }
+
+        if (!isObjectWhite)
+        {
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    binaryData[x][y] = (pixelReader.getArgb(x, y) & 0xFFFFFF) == 0x000000;
+                }
             }
         }
 
@@ -1358,6 +1381,7 @@ public class Controller {
 
         } while (changed);
 
+
         // Записываем результат в WritableImage
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
@@ -1368,6 +1392,21 @@ public class Controller {
                 }
             }
         }
+
+        if (!isObjectWhite){
+        WritableImage skeletonNegativeImage = new WritableImage(width, height);
+        PixelReader reader = skeletonImage.getPixelReader();
+        PixelWriter writer = skeletonNegativeImage.getPixelWriter();
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                Color color = reader.getColor(x, y);
+                Color negativeColor = Color.color(1 - color.getRed(), 1 - color.getGreen(), 1 - color.getBlue(), color.getOpacity());
+                writer.setColor(x, y, negativeColor);
+            }
+        }
+        skeletonImage = skeletonNegativeImage;}
+
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(skeletonImage);
             selectedImage = skeletonImage;
@@ -1377,6 +1416,34 @@ public class Controller {
         }
     }
 
+    // Метод для подсчета количества белых соседей (связанных пикселей)
+    private int countWhiteNeighbors(boolean[][] data, int x, int y) {
+        int count = 0;
+        if (data[x - 1][y]) count++;
+        if (data[x + 1][y]) count++;
+        if (data[x][y - 1]) count++;
+        if (data[x][y + 1]) count++;
+        if (data[x - 1][y - 1]) count++;
+        if (data[x + 1][y - 1]) count++;
+        if (data[x - 1][y + 1]) count++;
+        if (data[x + 1][y + 1]) count++;
+        return count;
+    }
+
+    // Метод для подсчета переходов от чёрного к белому среди соседей (непрерывность)
+    private int countTransitions(boolean[][] data, int x, int y) {
+        int transitions = 0;
+        // Массив координат восьми соседей
+        int[][] neighbors = {{x - 1, y}, {x - 1, y + 1}, {x, y + 1}, {x + 1, y + 1},
+                {x + 1, y}, {x + 1, y - 1}, {x, y - 1}, {x - 1, y - 1}};
+
+        for (int i = 0; i < neighbors.length - 1; i++) {
+            if (!data[neighbors[i][0]][neighbors[i][1]] && data[neighbors[i + 1][0]][neighbors[i + 1][1]]) {
+                transitions++;
+            }
+        }
+        return transitions;
+    }
 
     private int getGrayScale(int argb) {
         int red = (argb >> 16) & 0xFF; // Побитовые операции, >> для сдвига и получения отдельных частей 4-х битного argb, & 0xFF - умножение на маску
@@ -1476,32 +1543,4 @@ public class Controller {
         }
     }
 
-    // Метод для подсчета количества белых соседей (связанных пикселей)
-    private int countWhiteNeighbors(boolean[][] data, int x, int y) {
-        int count = 0;
-        if (data[x - 1][y]) count++;
-        if (data[x + 1][y]) count++;
-        if (data[x][y - 1]) count++;
-        if (data[x][y + 1]) count++;
-        if (data[x - 1][y - 1]) count++;
-        if (data[x + 1][y - 1]) count++;
-        if (data[x - 1][y + 1]) count++;
-        if (data[x + 1][y + 1]) count++;
-        return count;
-    }
-
-    // Метод для подсчета переходов от чёрного к белому среди соседей (непрерывность)
-    private int countTransitions(boolean[][] data, int x, int y) {
-        int transitions = 0;
-        // Массив координат восьми соседей
-        int[][] neighbors = {{x - 1, y}, {x - 1, y + 1}, {x, y + 1}, {x + 1, y + 1},
-                {x + 1, y}, {x + 1, y - 1}, {x, y - 1}, {x - 1, y - 1}};
-
-        for (int i = 0; i < neighbors.length - 1; i++) {
-            if (!data[neighbors[i][0]][neighbors[i][1]] && data[neighbors[i + 1][0]][neighbors[i + 1][1]]) {
-                transitions++;
-            }
-        }
-        return transitions;
-    }
 }
