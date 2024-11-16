@@ -131,6 +131,9 @@ public class Controller {
         maskSizeSlider.setMax(6);
         maskSizeSlider.setBlockIncrement(1);
 
+        firstBorderText.setText("50");
+        secondBorderText.setText("100");
+
         laplasianRadio.setToggleGroup(laplasianToggleGroup);
         laplasianOrigRadio.setToggleGroup(laplasianToggleGroup);
 
@@ -252,6 +255,15 @@ public class Controller {
                     firstBorderText.setText(oldValue);
                 }
             }
+            if (Integer.parseInt(newValue) > Integer.parseInt(secondBorderText.getText())){
+                Alert alert = new Alert(AlertType.ERROR);
+                alert.setTitle("Ошибка");
+                alert.setHeaderText("Конфликт границ");
+                alert.setContentText("Первая граница не должна быть больше второй. Пожалуйста, снизьте числовое значение первой границы или увеличьте значение второй границы.");
+                firstBorderText.setText(oldValue);
+
+                alert.showAndWait();
+            }
         }));
 
         secondBorderText.textProperty().addListener(((observableValue, oldValue, newValue) -> {
@@ -267,6 +279,15 @@ public class Controller {
                 } catch (NumberFormatException e) {
                     secondBorderText.setText(oldValue);
                 }
+            }
+            if (Integer.parseInt(newValue) < Integer.parseInt(firstBorderText.getText())){
+                Alert alert = new Alert(AlertType.ERROR);
+                alert.setTitle("Ошибка");
+                alert.setHeaderText("Конфликт границ");
+                alert.setContentText("Вторая граница не должна быть меньше второй. Пожалуйста, увеличьте значение второй границы или снизьте числовое значение первой границы.");
+                secondBorderText.setText(oldValue);
+
+                alert.showAndWait();
             }
         }));
     }
@@ -1665,7 +1686,7 @@ public class Controller {
     private void onSecondBorderPlus()
     {
         secondBorderText.setText(Integer.toString(Integer.parseInt(secondBorderText.getText()) + 1));
-        if (onNowCheck.isSelected()) applyBrightness(Integer.parseInt(secondBorderText.getText()), Integer.parseInt(secondBorderText.getText()), onInvertCheck.isSelected());
+        if (onNowCheck.isSelected()) applyBrightness(Integer.parseInt(firstBorderText.getText()), Integer.parseInt(secondBorderText.getText()), onInvertCheck.isSelected());
     }
     @FXML
     private void onFirstBorderMinus()
@@ -1677,7 +1698,7 @@ public class Controller {
     private void onSecondBorderMinus()
     {
         secondBorderText.setText(Integer.toString(Integer.parseInt(secondBorderText.getText()) - 1));
-        if (onNowCheck.isSelected()) applyBrightness(Integer.parseInt(secondBorderText.getText()), Integer.parseInt(secondBorderText.getText()), onInvertCheck.isSelected());
+        if (onNowCheck.isSelected()) applyBrightness(Integer.parseInt(firstBorderText.getText()), Integer.parseInt(secondBorderText.getText()), onInvertCheck.isSelected());
     }
 
 }
