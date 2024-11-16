@@ -1,3 +1,4 @@
+//Ошибки для диапазона ярковстей
 package com.example.paintin;
 
 import javafx.beans.value.ChangeListener;
@@ -62,6 +63,22 @@ public class Controller {
     private TextField maskSizeText;
     @FXML
     private TextField moveImageField;
+    @FXML
+    private TextField firstBorderText;
+    @FXML
+    private TextField secondBorderText;
+    @FXML
+    private CheckBox onInvertCheck;
+    @FXML
+    private Button firstBorderPlusButton;
+    @FXML
+    private Button firstBorderMinusButton;
+    @FXML
+    private Button secondBorderMinusButton;
+    @FXML
+    private Button secondBorderPlusButton;
+    @FXML
+    private CheckBox onNowCheck;
     private Image selectedImage;
     private Image outputImage;
     private FileChooser chooser = new FileChooser();
@@ -76,6 +93,7 @@ public class Controller {
     @FXML
     public void initialize() {
         effectComboBox.getItems().add("Негатив");
+        effectComboBox.getItems().add("Вырезание диапазона яркостей");
         effectComboBox.getItems().add("Гамма-коррекция");
         effectComboBox.getItems().add("Градиент Робертса");
         effectComboBox.getItems().add("Градиент Собела");
@@ -133,6 +151,14 @@ public class Controller {
                     thresholdText.setVisible(false);
                     maskSizeSlider.setVisible(false);
                     maskSizeText.setVisible(false);
+                    firstBorderText.setVisible(false);
+                    secondBorderText.setVisible(false);
+                    onInvertCheck.setVisible(false);
+                    firstBorderMinusButton.setVisible(false);
+                    firstBorderPlusButton.setVisible(false);
+                    secondBorderMinusButton.setVisible(false);
+                    secondBorderPlusButton.setVisible(false);
+                    onNowCheck.setVisible(false);
 
                     if (newValue.equals("Гамма-коррекция")) {
                         gammaSlider.setVisible(true);
@@ -154,10 +180,20 @@ public class Controller {
                         maskSizeText.setVisible(true);
                     }
 
-                    if (newValue.equals("Эрозия") || newValue.equals("Дилатация") || newValue.equals("Замыкание") || newValue.equals("Размыкание") || newValue.equals("Выделение границ") || newValue.equals("Остов"))
-                    {
+                    if (newValue.equals("Эрозия") || newValue.equals("Дилатация") || newValue.equals("Замыкание") || newValue.equals("Размыкание") || newValue.equals("Выделение границ") || newValue.equals("Остов")) {
                         whiteRadio.setVisible(true);
                         blackRadio.setVisible(true);
+                    }
+
+                    if (newValue.equals("Вырезание диапазона яркостей")) {
+                        firstBorderText.setVisible(true);
+                        secondBorderText.setVisible(true);
+                        onInvertCheck.setVisible(true);
+                        firstBorderMinusButton.setVisible(true);
+                        firstBorderPlusButton.setVisible(true);
+                        secondBorderMinusButton.setVisible(true);
+                        secondBorderPlusButton.setVisible(true);
+                        onNowCheck.setVisible(true);
                     }
                 }
             }
@@ -201,6 +237,38 @@ public class Controller {
                 maskSizeText.setText("Текущий размер маски : " + maskSize);
             }
         });
+
+        firstBorderText.textProperty().addListener(((observableValue, oldValue, newValue) -> {
+            if (!newValue.matches("\\d*")) {
+                firstBorderText.setText(oldValue);
+            }
+            else {
+                try {
+                    int value = Integer.parseInt(newValue);
+                    if (value < 0 || value > 255) {
+                        firstBorderText.setText(oldValue);
+                    }
+                } catch (NumberFormatException e) {
+                    firstBorderText.setText(oldValue);
+                }
+            }
+        }));
+
+        secondBorderText.textProperty().addListener(((observableValue, oldValue, newValue) -> {
+            if (!newValue.matches("\\d*")) {
+                secondBorderText.setText(oldValue);
+            }
+            else {
+                try {
+                    int value = Integer.parseInt(newValue);
+                    if (value < 0 || value > 255) {
+                        secondBorderText.setText(oldValue);
+                    }
+                } catch (NumberFormatException e) {
+                    secondBorderText.setText(oldValue);
+                }
+            }
+        }));
     }
 
     @FXML
@@ -294,6 +362,7 @@ public class Controller {
             if (selectedEffect != null) {
                 switch (selectedEffect) {
                     case "Негатив" -> applyNegative();
+                    case "Вырезание диапазона яркостей" -> applyBrightness(Integer.parseInt(firstBorderText.getText()), Integer.parseInt(secondBorderText.getText()), onInvertCheck.isSelected());
                     case "Гамма-коррекция" -> applyGammaCorrection(Double.parseDouble(gammaText.getText()));
                     case "Градиент Робертса" -> applyRobertsOperator();
                     case "Градиент Собела" -> applySobelOperator();
@@ -361,6 +430,49 @@ public class Controller {
         }
     }
 
+    public void applyBrightness(int low, int high, boolean invert) {
+        if (selectedImage != null) {
+            int width = (int) selectedImage.getWidth();
+            int height = (int) selectedImage.getHeight();
+
+            WritableImage resultImage = new WritableImage(width, height);
+            PixelReader pixelReader = selectedImage.getPixelReader();
+            PixelWriter pixelWriter = resultImage.getPixelWriter();
+
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    Color color = pixelReader.getColor(x, y);
+                    double brightness = color.getBrightness();
+
+                    int brightnessValue = (int) (brightness * 255);
+
+                    if (invert) {
+                        if (brightnessValue < low || brightnessValue > high) {
+                            pixelWriter.setColor(x, y, color);
+                        } else {
+                            pixelWriter.setColor(x, y, Color.BLACK);
+                        }
+                    } else {
+                        if (brightnessValue >= low && brightnessValue <= high) {
+                            pixelWriter.setColor(x, y, color);
+                        } else {
+                            pixelWriter.setColor(x, y, Color.BLACK);
+                        }
+                    }
+                }
+            }
+
+            if (onOriginalCheck.isSelected()) {
+                imageViewIn.setImage(resultImage);
+                selectedImage = resultImage;
+            } else {
+                imageViewOut.setImage(resultImage);
+                outputImage = resultImage;
+            }
+        }
+    }
+
+
     private void applyGammaCorrection(double gamma) {
         if (gamma >= 0) {
             int width = (int) selectedImage.getWidth();
@@ -386,7 +498,7 @@ public class Controller {
                 outputImage = gammaImage;
             }
 
-        }else {
+        } else {
             Alert alert = new Alert(AlertType.ERROR);
             alert.setTitle("Ошибка");
             alert.setHeaderText("Неверное значение");
@@ -590,8 +702,7 @@ public class Controller {
                 imageViewOut.setImage(combinedImage);
                 outputImage = combinedImage;
             }
-        }
-        else {
+        } else {
             Alert alert = new Alert(AlertType.ERROR);
             alert.setTitle("Ошибка");
             alert.setHeaderText("Не выбран ни один вариант");
@@ -661,37 +772,38 @@ public class Controller {
     }
 
     public void applyThresholdFilter(double threshold) {
-        if (threshold >= 0){
-        int width = (int) selectedImage.getWidth();
-        int height = (int) selectedImage.getHeight();
+        if (threshold >= 0) {
+            int width = (int) selectedImage.getWidth();
+            int height = (int) selectedImage.getHeight();
 
-        WritableImage thresholdImage = new WritableImage(width, height);
-        PixelReader pixelReader = selectedImage.getPixelReader();
-        PixelWriter pixelWriter = thresholdImage.getPixelWriter();
+            WritableImage thresholdImage = new WritableImage(width, height);
+            PixelReader pixelReader = selectedImage.getPixelReader();
+            PixelWriter pixelWriter = thresholdImage.getPixelWriter();
 
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                // Читаем цвет текущего пикселя
-                Color color = pixelReader.getColor(x, y);
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    // Читаем цвет текущего пикселя
+                    Color color = pixelReader.getColor(x, y);
 
-                // Преобразуем цвет в оттенок серого для расчета яркости
-                double brightness = color.getBrightness();
+                    // Преобразуем цвет в оттенок серого для расчета яркости
+                    double brightness = color.getBrightness();
 
-                // Сравниваем яркость с порогом и устанавливаем белый или черный цвет
-                Color binaryColor = brightness >= threshold ? Color.WHITE : Color.BLACK;
+                    // Сравниваем яркость с порогом и устанавливаем белый или черный цвет
+                    Color binaryColor = brightness >= threshold ? Color.WHITE : Color.BLACK;
 
-                // Записываем бинаризованный цвет в выходное изображение
-                pixelWriter.setColor(x, y, binaryColor);
+                    // Записываем бинаризованный цвет в выходное изображение
+                    pixelWriter.setColor(x, y, binaryColor);
+                }
             }
-        }
 
-        if (onOriginalCheck.isSelected()) {
-            imageViewIn.setImage(thresholdImage);
-            selectedImage = thresholdImage;
+            if (onOriginalCheck.isSelected()) {
+                imageViewIn.setImage(thresholdImage);
+                selectedImage = thresholdImage;
+            } else {
+                imageViewOut.setImage(thresholdImage);
+                outputImage = thresholdImage;
+            }
         } else {
-            imageViewOut.setImage(thresholdImage);
-            outputImage = thresholdImage;
-        }} else {
             Alert alert = new Alert(AlertType.ERROR);
             alert.setTitle("Ошибка");
             alert.setHeaderText("Неверное значение");
@@ -1336,8 +1448,7 @@ public class Controller {
             }
         }
 
-        if (!isObjectWhite)
-        {
+        if (!isObjectWhite) {
             for (int y = 0; y < height; y++) {
                 for (int x = 0; x < width; x++) {
                     binaryData[x][y] = (pixelReader.getArgb(x, y) & 0xFFFFFF) == 0x000000;
@@ -1393,19 +1504,20 @@ public class Controller {
             }
         }
 
-        if (!isObjectWhite){
-        WritableImage skeletonNegativeImage = new WritableImage(width, height);
-        PixelReader reader = skeletonImage.getPixelReader();
-        PixelWriter writer = skeletonNegativeImage.getPixelWriter();
+        if (!isObjectWhite) {
+            WritableImage skeletonNegativeImage = new WritableImage(width, height);
+            PixelReader reader = skeletonImage.getPixelReader();
+            PixelWriter writer = skeletonNegativeImage.getPixelWriter();
 
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                Color color = reader.getColor(x, y);
-                Color negativeColor = Color.color(1 - color.getRed(), 1 - color.getGreen(), 1 - color.getBlue(), color.getOpacity());
-                writer.setColor(x, y, negativeColor);
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    Color color = reader.getColor(x, y);
+                    Color negativeColor = Color.color(1 - color.getRed(), 1 - color.getGreen(), 1 - color.getBlue(), color.getOpacity());
+                    writer.setColor(x, y, negativeColor);
+                }
             }
+            skeletonImage = skeletonNegativeImage;
         }
-        skeletonImage = skeletonNegativeImage;}
 
         if (onOriginalCheck.isSelected()) {
             imageViewIn.setImage(skeletonImage);
@@ -1541,6 +1653,31 @@ public class Controller {
                 writer.setColor(x, y, newColor);
             }
         }
+    }
+
+    @FXML
+    private void onFirstBorderPlus()
+    {
+        firstBorderText.setText(Integer.toString(Integer.parseInt(firstBorderText.getText()) + 1));
+        if (onNowCheck.isSelected()) applyBrightness(Integer.parseInt(firstBorderText.getText()), Integer.parseInt(secondBorderText.getText()), onInvertCheck.isSelected());
+    }
+    @FXML
+    private void onSecondBorderPlus()
+    {
+        secondBorderText.setText(Integer.toString(Integer.parseInt(secondBorderText.getText()) + 1));
+        if (onNowCheck.isSelected()) applyBrightness(Integer.parseInt(secondBorderText.getText()), Integer.parseInt(secondBorderText.getText()), onInvertCheck.isSelected());
+    }
+    @FXML
+    private void onFirstBorderMinus()
+    {
+        firstBorderText.setText(Integer.toString(Integer.parseInt(firstBorderText.getText()) - 1));
+        if (onNowCheck.isSelected()) applyBrightness(Integer.parseInt(firstBorderText.getText()), Integer.parseInt(secondBorderText.getText()), onInvertCheck.isSelected());
+    }
+    @FXML
+    private void onSecondBorderMinus()
+    {
+        secondBorderText.setText(Integer.toString(Integer.parseInt(secondBorderText.getText()) - 1));
+        if (onNowCheck.isSelected()) applyBrightness(Integer.parseInt(secondBorderText.getText()), Integer.parseInt(secondBorderText.getText()), onInvertCheck.isSelected());
     }
 
 }

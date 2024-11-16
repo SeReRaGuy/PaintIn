@@ -50,5 +50,13 @@
       <Button fx:id="swapButton" layoutX="363.0" layoutY="732.0" mnemonicParsing="false" onMouseClicked="#onSwapImages" prefHeight="36.0" prefWidth="335.0" text="Поменять картинки местами" />
       <Slider fx:id="maskSizeSlider" layoutX="360.0" layoutY="707.0" prefHeight="14.0" prefWidth="335.0" visible="false" />
       <TextField fx:id="maskSizeText" editable="false" layoutX="363.0" layoutY="680.0" prefHeight="25.0" prefWidth="335.0" promptText="Измените значение маски" stylesheets="@style.css" visible="false" />
+      <TextField fx:id="firstBorderText" layoutX="360.0" layoutY="596.0" prefHeight="25.0" prefWidth="335.0" promptText="Первая граница" stylesheets="@style.css" visible="false" />
+      <TextField fx:id="secondBorderText" layoutX="360.0" layoutY="629.0" prefHeight="25.0" prefWidth="335.0" promptText="Вторая граница" stylesheets="@style.css" visible="false" />
+      <CheckBox fx:id="onInvertCheck" layoutX="360.0" layoutY="671.0" mnemonicParsing="false" text="Инвертировать выполнение" visible="false" />
+      <Button fx:id="firstBorderPlusButton" layoutX="704.0" layoutY="596.0" mnemonicParsing="false" onMouseClicked="#onFirstBorderPlus" prefHeight="25.0" prefWidth="26.0" text="+" visible="false" />
+      <Button fx:id="firstBorderMinusButton" layoutX="730.0" layoutY="596.0" mnemonicParsing="false" onMouseClicked="#onFirstBorderMinus" prefHeight="25.0" prefWidth="26.0" text="-" visible="false" />
+      <Button fx:id="secondBorderMinusButton" layoutX="730.0" layoutY="629.0" mnemonicParsing="false" onMouseClicked="#onSecondBorderMinus" prefHeight="25.0" prefWidth="26.0" text="-" visible="false" />
+      <Button fx:id="secondBorderPlusButton" layoutX="704.0" layoutY="629.0" mnemonicParsing="false" onMouseClicked="#onSecondBorderPlus" prefHeight="25.0" prefWidth="26.0" text="+" visible="false" />
+      <CheckBox fx:id="onNowCheck" layoutX="545.0" layoutY="671.0" mnemonicParsing="false" text="Проводить преобразование сразу" visible="false" />
    </children>
 </AnchorPane>
