@@ -18,12 +18,12 @@
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
-            <version>20-ea+4</version>
+            <version>21</version>
         </dependency>
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-fxml</artifactId>
-            <version>20-ea+4</version>
+            <version>21</version>
         </dependency>
 
         <dependency>
@@ -38,18 +38,17 @@
             <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
-
-
-
-        <!-- JavaFX Swing (для SwingFXUtils) -->
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-swing</artifactId>
-            <version>20-ea+4</version>
+            <version>20</version>
         </dependency>
-
-
-
+        <dependency>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-shade-plugin</artifactId>
+            <version>3.6.0</version>
+            <type>maven-plugin</type>
+        </dependency>
     </dependencies>
 
     <build>
@@ -57,10 +56,11 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.10.1</version>
+                <version>3.11.0</version>
                 <configuration>
-                    <source>20</source>
-                    <target>20</target>
+                    <source>21</source>
+                    <target>21</target>
+
                 </configuration>
             </plugin>
             <plugin>
@@ -69,9 +69,10 @@
                 <version>0.0.8</version>
                 <executions>
                     <execution>
+                        <!-- Default configuration for running with: mvn clean javafx:run -->
                         <id>default-cli</id>
                         <configuration>
-                            <mainClass>com.example.paintin.Application</mainClass>
+                            <mainClass>com.example.multimedia/com.example.multimedia.Main</mainClass>
                             <launcher>app</launcher>
                             <jlinkZipName>app</jlinkZipName>
                             <jlinkImageName>app</jlinkImageName>
@@ -80,29 +81,22 @@
                             <noHeaderFiles>true</noHeaderFiles>
                         </configuration>
                     </execution>
-                    <execution>
-                        <id>create-jlink</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>jlink</goal>
-                        </goals>
-                    </execution>
                 </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>3.2.4</version>
+                <version>3.6.0</version>
                 <executions>
                     <execution>
-                        <phase>package</phase>
                         <goals>
                             <goal>shade</goal>
                         </goals>
                         <configuration>
+                            <shadedArtifactAttached>true</shadedArtifactAttached>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>com.example.paintin.Application</mainClass>
+                                    <mainClass>com.example.paintin.Main</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>
@@ -111,4 +105,5 @@
             </plugin>
         </plugins>
     </build>
+
 </project>
