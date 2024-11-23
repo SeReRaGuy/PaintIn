@@ -493,7 +493,6 @@ public class Controller {
     }
 
     public void applyFillWithAverageColorHorizontal(double percentage) {
-
         if (selectedImage != null) {
             int width = (int) selectedImage.getWidth();
             int height = (int) selectedImage.getHeight();
@@ -506,22 +505,28 @@ public class Controller {
             int fillHeight = (int) (height * (percentage / 100.0));
 
             if (changeSideHCheck.isSelected()) {
+                // Заливка начинается с нижней стороны
                 for (int y = 0; y < height; y++) {
                     for (int x = 0; x < width; x++) {
-                        if (y > fillHeight) {
-                            pixelWriter.setColor(x, y, averageColor); // Заливка цветом
+                        if (y >= height - fillHeight) {
+                            // Заливаем нижнюю часть
+                            pixelWriter.setColor(x, y, averageColor);
                         } else {
-                            pixelWriter.setColor(x, y, pixelReader.getColor(x, y)); // Сохраняем оригинальный цвет
+                            // Сохраняем оригинальный цвет
+                            pixelWriter.setColor(x, y, pixelReader.getColor(x, y));
                         }
                     }
                 }
             } else {
+                // Заливка начинается с верхней стороны
                 for (int y = 0; y < height; y++) {
                     for (int x = 0; x < width; x++) {
                         if (y < fillHeight) {
-                            pixelWriter.setColor(x, y, averageColor); // Заливка цветом
+                            // Заливаем верхнюю часть
+                            pixelWriter.setColor(x, y, averageColor);
                         } else {
-                            pixelWriter.setColor(x, y, pixelReader.getColor(x, y)); // Сохраняем оригинальный цвет
+                            // Сохраняем оригинальный цвет
+                            pixelWriter.setColor(x, y, pixelReader.getColor(x, y));
                         }
                     }
                 }
@@ -536,6 +541,7 @@ public class Controller {
             }
         }
     }
+
 
     public void applyFillWithAverageColorVertical(double percentage) {
         if (selectedImage != null) {
@@ -552,7 +558,7 @@ public class Controller {
             if (changeSideVCheck.isSelected()) {
                 for (int y = 0; y < height; y++) {
                     for (int x = 0; x < width; x++) {
-                        if (x > fillWidth) {
+                        if (x >= width - fillWidth) {
                             pixelWriter.setColor(x, y, averageColor); // Заливка цветом
                         } else {
                             pixelWriter.setColor(x, y, pixelReader.getColor(x, y)); // Сохраняем оригинальный цвет
