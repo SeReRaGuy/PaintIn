@@ -58,5 +58,11 @@
       <Button fx:id="secondBorderMinusButton" layoutX="730.0" layoutY="629.0" mnemonicParsing="false" onMouseClicked="#onSecondBorderMinus" prefHeight="25.0" prefWidth="26.0" text="-" visible="false" />
       <Button fx:id="secondBorderPlusButton" layoutX="704.0" layoutY="629.0" mnemonicParsing="false" onMouseClicked="#onSecondBorderPlus" prefHeight="25.0" prefWidth="26.0" text="+" visible="false" />
       <CheckBox fx:id="onNowCheck" layoutX="545.0" layoutY="671.0" mnemonicParsing="false" text="Проводить преобразование сразу" visible="false" />
+      <Slider fx:id="percentageFillHSlider" layoutX="363.0" layoutY="715.0" prefHeight="14.0" prefWidth="335.0" visible="false" />
+      <TextField fx:id="percentageFillHText" editable="true" layoutX="363.0" layoutY="688.0" prefHeight="25.0" prefWidth="335.0" promptText="Измените область заливки" stylesheets="@style.css" visible="false" />
+      <Slider fx:id="percentageFillVSlider" layoutX="363.0" layoutY="715.0" prefHeight="14.0" prefWidth="335.0" visible="false" />
+      <TextField fx:id="percentageFillVText" editable="true" layoutX="363.0" layoutY="688.0" prefHeight="25.0" prefWidth="335.0" promptText="Измените область заливки" stylesheets="@style.css" visible="false" />
+      <CheckBox fx:id="changeSideVCheck" layoutX="363.0" layoutY="663.0" mnemonicParsing="false" text="Залить с другой стороны" visible="false" />
+      <CheckBox fx:id="changeSideHCheck" layoutX="363.0" layoutY="663.0" mnemonicParsing="false" text="Залить с другой стороны" visible="false" />
    </children>
 </AnchorPane>

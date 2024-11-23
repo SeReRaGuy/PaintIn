@@ -79,6 +79,18 @@ public class Controller {
     private Button secondBorderPlusButton;
     @FXML
     private CheckBox onNowCheck;
+    @FXML
+    private Slider percentageFillHSlider;
+    @FXML
+    private Slider percentageFillVSlider;
+    @FXML
+    private TextField percentageFillHText;
+    @FXML
+    private TextField percentageFillVText;
+    @FXML
+    private CheckBox changeSideVCheck;
+    @FXML
+    private CheckBox changeSideHCheck;
     private Image selectedImage;
     private Image outputImage;
     private FileChooser chooser = new FileChooser();
@@ -88,6 +100,7 @@ public class Controller {
             {2 / 16.0, 4 / 16.0, 2 / 16.0},
             {1 / 16.0, 2 / 16.0, 1 / 16.0}
     };
+    private Color averageColor;
 
 
     @FXML
@@ -113,6 +126,8 @@ public class Controller {
         effectComboBox.getItems().add("Размыкание");
         effectComboBox.getItems().add("Выделение границ");
         effectComboBox.getItems().add("Остов");
+        effectComboBox.getItems().add("Горизонтальная заливка");
+        effectComboBox.getItems().add("Вертикальная заливка");
 
         moveImageField.setText("Сместить изображения");
 
@@ -140,6 +155,12 @@ public class Controller {
         whiteRadio.setToggleGroup(WBToggleGroup);
         blackRadio.setToggleGroup(WBToggleGroup);
 
+        percentageFillHSlider.setMin(0);
+        percentageFillHSlider.setMax(100);
+
+        percentageFillVSlider.setMin(0);
+        percentageFillVSlider.setMax(100);
+
         effectComboBox.valueProperty().addListener(new ChangeListener<String>() {
             @Override
             public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
@@ -162,6 +183,12 @@ public class Controller {
                     secondBorderMinusButton.setVisible(false);
                     secondBorderPlusButton.setVisible(false);
                     onNowCheck.setVisible(false);
+                    percentageFillHSlider.setVisible(false);
+                    percentageFillVSlider.setVisible(false);
+                    percentageFillHText.setVisible(false);
+                    percentageFillVText.setVisible(false);
+                    changeSideVCheck.setVisible(false);
+                    changeSideHCheck.setVisible(false);
 
                     if (newValue.equals("Гамма-коррекция")) {
                         gammaSlider.setVisible(true);
@@ -197,6 +224,18 @@ public class Controller {
                         secondBorderMinusButton.setVisible(true);
                         secondBorderPlusButton.setVisible(true);
                         onNowCheck.setVisible(true);
+                    }
+
+                    if (newValue.equals("Горизонтальная заливка")) {
+                        percentageFillHSlider.setVisible(true);
+                        percentageFillHText.setVisible(true);
+                        changeSideHCheck.setVisible(true);
+                    }
+
+                    if (newValue.equals("Вертикальная заливка")) {
+                        percentageFillVSlider.setVisible(true);
+                        percentageFillVText.setVisible(true);
+                        changeSideVCheck.setVisible(true);
                     }
                 }
             }
@@ -244,8 +283,7 @@ public class Controller {
         firstBorderText.textProperty().addListener(((observableValue, oldValue, newValue) -> {
             if (!newValue.matches("\\d*")) {
                 firstBorderText.setText(oldValue);
-            }
-            else {
+            } else {
                 try {
                     int value = Integer.parseInt(newValue);
                     if (value < 0 || value > 255) {
@@ -255,7 +293,7 @@ public class Controller {
                     firstBorderText.setText(oldValue);
                 }
             }
-            if (Integer.parseInt(newValue) > Integer.parseInt(secondBorderText.getText())){
+            if (Integer.parseInt(newValue) > Integer.parseInt(secondBorderText.getText())) {
                 Alert alert = new Alert(AlertType.ERROR);
                 alert.setTitle("Ошибка");
                 alert.setHeaderText("Конфликт границ");
@@ -269,8 +307,7 @@ public class Controller {
         secondBorderText.textProperty().addListener(((observableValue, oldValue, newValue) -> {
             if (!newValue.matches("\\d*")) {
                 secondBorderText.setText(oldValue);
-            }
-            else {
+            } else {
                 try {
                     int value = Integer.parseInt(newValue);
                     if (value < 0 || value > 255) {
@@ -280,7 +317,7 @@ public class Controller {
                     secondBorderText.setText(oldValue);
                 }
             }
-            if (Integer.parseInt(newValue) < Integer.parseInt(firstBorderText.getText())){
+            if (Integer.parseInt(newValue) < Integer.parseInt(firstBorderText.getText())) {
                 Alert alert = new Alert(AlertType.ERROR);
                 alert.setTitle("Ошибка");
                 alert.setHeaderText("Конфликт границ");
@@ -290,6 +327,28 @@ public class Controller {
                 alert.showAndWait();
             }
         }));
+
+        percentageFillHSlider.valueProperty().addListener(new ChangeListener<Number>() {
+            @Override
+            public void changed(ObservableValue<? extends Number> observableValue, Number number, Number t1) {
+                if (selectedImage != null) {
+                    int roundedValue = (int) Math.round(percentageFillHSlider.getValue());
+                    applyFillWithAverageColorHorizontal(roundedValue);
+                    percentageFillHText.setText(String.valueOf(roundedValue));
+                }
+            }
+        });
+
+        percentageFillVSlider.valueProperty().addListener(new ChangeListener<Number>() {
+            @Override
+            public void changed(ObservableValue<? extends Number> observableValue, Number number, Number t1) {
+                if (selectedImage != null) {
+                    int roundedValue = (int) Math.round(percentageFillVSlider.getValue());
+                    applyFillWithAverageColorVertical(roundedValue);
+                    percentageFillVText.setText(String.valueOf(roundedValue));
+                }
+            }
+        });
     }
 
     @FXML
@@ -300,6 +359,12 @@ public class Controller {
         if (selectedFile != null) {
             selectedImage = new Image(selectedFile.toURI().toString());
             imageViewIn.setImage(selectedImage);
+
+            PixelReader pixelReader = selectedImage.getPixelReader();
+            int width = (int) selectedImage.getWidth();
+            int height = (int) selectedImage.getHeight();
+
+            averageColor = calculateAverageColor(pixelReader, width, height);
         }
     }
 
@@ -383,7 +448,8 @@ public class Controller {
             if (selectedEffect != null) {
                 switch (selectedEffect) {
                     case "Негатив" -> applyNegative();
-                    case "Вырезание диапазона яркостей" -> applyBrightness(Integer.parseInt(firstBorderText.getText()), Integer.parseInt(secondBorderText.getText()), onInvertCheck.isSelected());
+                    case "Вырезание диапазона яркостей" ->
+                            applyBrightness(Integer.parseInt(firstBorderText.getText()), Integer.parseInt(secondBorderText.getText()), onInvertCheck.isSelected());
                     case "Гамма-коррекция" -> applyGammaCorrection(Double.parseDouble(gammaText.getText()));
                     case "Градиент Робертса" -> applyRobertsOperator();
                     case "Градиент Собела" -> applySobelOperator();
@@ -404,6 +470,8 @@ public class Controller {
                     case "Размыкание" -> applyOpening(maskSize);
                     case "Выделение границ" -> applyEdgeDetection(maskSize);
                     case "Остов" -> applySkeletonization();
+                    case "Горизонтальная заливка" -> applyFillWithAverageColorHorizontal(Integer.parseInt(percentageFillHText.getText()));
+                    case "Вертикальная заливка" -> applyFillWithAverageColorVertical(Integer.parseInt(percentageFillVText.getText()));
                 }
             } else {
                 Alert alert = new Alert(AlertType.ERROR);
@@ -423,6 +491,96 @@ public class Controller {
             alert.showAndWait();
         }
     }
+
+    public void applyFillWithAverageColorHorizontal(double percentage) {
+
+        if (selectedImage != null) {
+            int width = (int) selectedImage.getWidth();
+            int height = (int) selectedImage.getHeight();
+
+            WritableImage resultImage = new WritableImage(width, height);
+            PixelReader pixelReader = selectedImage.getPixelReader();
+            PixelWriter pixelWriter = resultImage.getPixelWriter();
+
+            // Рассчитываем количество строк для заливки
+            int fillHeight = (int) (height * (percentage / 100.0));
+
+            if (changeSideHCheck.isSelected()) {
+                for (int y = 0; y < height; y++) {
+                    for (int x = 0; x < width; x++) {
+                        if (y > fillHeight) {
+                            pixelWriter.setColor(x, y, averageColor); // Заливка цветом
+                        } else {
+                            pixelWriter.setColor(x, y, pixelReader.getColor(x, y)); // Сохраняем оригинальный цвет
+                        }
+                    }
+                }
+            } else {
+                for (int y = 0; y < height; y++) {
+                    for (int x = 0; x < width; x++) {
+                        if (y < fillHeight) {
+                            pixelWriter.setColor(x, y, averageColor); // Заливка цветом
+                        } else {
+                            pixelWriter.setColor(x, y, pixelReader.getColor(x, y)); // Сохраняем оригинальный цвет
+                        }
+                    }
+                }
+            }
+
+            if (onOriginalCheck.isSelected()) {
+                imageViewIn.setImage(resultImage);
+                selectedImage = resultImage;
+            } else {
+                imageViewOut.setImage(resultImage);
+                outputImage = resultImage;
+            }
+        }
+    }
+
+    public void applyFillWithAverageColorVertical(double percentage) {
+        if (selectedImage != null) {
+            int width = (int) selectedImage.getWidth();
+            int height = (int) selectedImage.getHeight();
+
+            WritableImage resultImage = new WritableImage(width, height);
+            PixelReader pixelReader = selectedImage.getPixelReader();
+            PixelWriter pixelWriter = resultImage.getPixelWriter();
+
+            // Рассчитываем количество столбцов для заливки
+            int fillWidth = (int) (width * (percentage / 100.0));
+
+            if (changeSideVCheck.isSelected()) {
+                for (int y = 0; y < height; y++) {
+                    for (int x = 0; x < width; x++) {
+                        if (x > fillWidth) {
+                            pixelWriter.setColor(x, y, averageColor); // Заливка цветом
+                        } else {
+                            pixelWriter.setColor(x, y, pixelReader.getColor(x, y)); // Сохраняем оригинальный цвет
+                        }
+                    }
+                }
+            } else {
+                for (int y = 0; y < height; y++) {
+                    for (int x = 0; x < width; x++) {
+                        if (x < fillWidth) {
+                            pixelWriter.setColor(x, y, averageColor); // Заливка цветом
+                        } else {
+                            pixelWriter.setColor(x, y, pixelReader.getColor(x, y)); // Сохраняем оригинальный цвет
+                        }
+                    }
+                }
+            }
+
+            if (onOriginalCheck.isSelected()) {
+                imageViewIn.setImage(resultImage);
+                selectedImage = resultImage;
+            } else {
+                imageViewOut.setImage(resultImage);
+                outputImage = resultImage;
+            }
+        }
+    }
+
 
     private void applyNegative() {
         if (selectedImage != null) {
@@ -1676,29 +1834,50 @@ public class Controller {
         }
     }
 
+    private Color calculateAverageColor(PixelReader pixelReader, int width, int height) {
+        double totalRed = 0;
+        double totalGreen = 0;
+        double totalBlue = 0;
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                Color color = pixelReader.getColor(x, y);
+                totalRed += color.getRed();
+                totalGreen += color.getGreen();
+                totalBlue += color.getBlue();
+            }
+        }
+
+        int totalPixels = width * height;
+        return Color.color(totalRed / totalPixels, totalGreen / totalPixels, totalBlue / totalPixels);
+    }
+
     @FXML
-    private void onFirstBorderPlus()
-    {
+    private void onFirstBorderPlus() {
         firstBorderText.setText(Integer.toString(Integer.parseInt(firstBorderText.getText()) + 1));
-        if (onNowCheck.isSelected()) applyBrightness(Integer.parseInt(firstBorderText.getText()), Integer.parseInt(secondBorderText.getText()), onInvertCheck.isSelected());
+        if (onNowCheck.isSelected())
+            applyBrightness(Integer.parseInt(firstBorderText.getText()), Integer.parseInt(secondBorderText.getText()), onInvertCheck.isSelected());
     }
+
     @FXML
-    private void onSecondBorderPlus()
-    {
+    private void onSecondBorderPlus() {
         secondBorderText.setText(Integer.toString(Integer.parseInt(secondBorderText.getText()) + 1));
-        if (onNowCheck.isSelected()) applyBrightness(Integer.parseInt(firstBorderText.getText()), Integer.parseInt(secondBorderText.getText()), onInvertCheck.isSelected());
+        if (onNowCheck.isSelected())
+            applyBrightness(Integer.parseInt(firstBorderText.getText()), Integer.parseInt(secondBorderText.getText()), onInvertCheck.isSelected());
     }
+
     @FXML
-    private void onFirstBorderMinus()
-    {
+    private void onFirstBorderMinus() {
         firstBorderText.setText(Integer.toString(Integer.parseInt(firstBorderText.getText()) - 1));
-        if (onNowCheck.isSelected()) applyBrightness(Integer.parseInt(firstBorderText.getText()), Integer.parseInt(secondBorderText.getText()), onInvertCheck.isSelected());
+        if (onNowCheck.isSelected())
+            applyBrightness(Integer.parseInt(firstBorderText.getText()), Integer.parseInt(secondBorderText.getText()), onInvertCheck.isSelected());
     }
+
     @FXML
-    private void onSecondBorderMinus()
-    {
+    private void onSecondBorderMinus() {
         secondBorderText.setText(Integer.toString(Integer.parseInt(secondBorderText.getText()) - 1));
-        if (onNowCheck.isSelected()) applyBrightness(Integer.parseInt(firstBorderText.getText()), Integer.parseInt(secondBorderText.getText()), onInvertCheck.isSelected());
+        if (onNowCheck.isSelected())
+            applyBrightness(Integer.parseInt(firstBorderText.getText()), Integer.parseInt(secondBorderText.getText()), onInvertCheck.isSelected());
     }
 
 }
